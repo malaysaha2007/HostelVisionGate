@@ -1,0 +1,211 @@
+/* Main Page & Container */
+.apply-vacation-page { 
+  min-height: 100vh; 
+  background: linear-gradient(180deg, #071126 0%, #05101f 100%); 
+  padding: 0 0 40px 0; 
+  color: #ffffff;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  
+  /* Forces the entire page layout to shift upward, bypassing any header constraints */
+  transform: translateY(-40px); 
+}
+
+.vacation-container { 
+  width: min(800px, 92%); 
+  margin: 0 auto; 
+  background-color: #121935; 
+  border: 1px solid rgba(255, 255, 255, 0.05); 
+  border-radius: 15px; 
+  padding: 30px; 
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5); 
+}
+
+/* Header Section */
+.vacation-header {
+  margin-bottom: 30px;
+}
+
+.header-text h1 {
+  margin: 0;
+  font-size: 26px;
+  color: #ffffff;
+}
+
+.header-text p {
+  margin: 5px 0 0 0;
+  font-size: 14px;
+  color: #8a96b1;
+}
+
+/* Student Profile Card */
+.student-profile-card {
+  background-color: #1a2245;
+  border-radius: 12px;
+  padding: 20px;
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  border: 1px solid #2a345e;
+  margin-bottom: 30px;
+}
+
+.profile-img-wrapper img {
+  width: 90px;
+  height: 90px;
+  border-radius: 12px;
+  object-fit: cover;
+  border: 2px solid #3b82f6;
+}
+
+.profile-details h2 {
+  margin: 0;
+  color: #00d4ff; 
+  font-size: 22px;
+  letter-spacing: 1px;
+}
+
+.roll-number {
+  color: #83a0df; 
+  font-weight: 500;
+  margin: 4px 0 2px 0 !important;
+}
+
+.profile-details p {
+  margin: 0 0 12px 0;
+  color: #a0aec0;
+  font-size: 13px;
+}
+
+.campus-status-badge {
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: bold;
+  display: inline-block;
+}
+
+.campus-status-badge.inside {
+  background-color: rgba(16, 185, 129, 0.2);
+  color: #10b981;
+  border: 1px solid rgba(16, 185, 129, 0.4);
+}
+
+.campus-status-badge.outside {
+  background-color: rgba(239, 68, 68, 0.2);
+  color: #ef4444;
+  border: 1px solid rgba(239, 68, 68, 0.4);
+}
+
+/* Form Container & Inputs */
+.form-container {
+  background-color: #1a2245;
+  border-radius: 12px;
+  padding: 30px;
+  border: 1px solid #2a345e;
+}
+
+.vacation-form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.form-group label {
+  color: #00d4ff; 
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.form-group input,
+.form-group textarea {
+  background-color: #0f1631; 
+  border: 1px solid #2a345e;
+  border-radius: 8px;
+  padding: 14px;
+  color: #ffffff;
+  font-size: 14px;
+  font-family: inherit;
+  transition: border 0.3s ease;
+}
+
+.form-group textarea {
+  resize: vertical;
+}
+
+.form-group input:focus,
+.form-group textarea:focus {
+  outline: none;
+  border-color: #3b82f6; 
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+}
+
+.form-group input::placeholder,
+.form-group textarea::placeholder {
+  color: #4a5578;
+}
+
+.form-group input[type="time"]::-webkit-calendar-picker-indicator,
+.form-group input[type="date"]::-webkit-calendar-picker-indicator {
+  filter: invert(1);
+  cursor: pointer;
+}
+
+.word-count {
+  text-align: right;
+  font-size: 12px;
+  color: #8a96b1;
+  margin-top: 4px;
+}
+
+/* Submit & Cancel Buttons */
+.submit-area {
+  display: flex;
+  justify-content: flex-end;
+  gap: 15px;
+  margin-top: 10px;
+}
+
+.cancel-btn {
+  padding: 12px 24px;
+  border: 1px solid #4b5563;
+  border-radius: 8px;
+  background: transparent;
+  color: #94a3b8;
+  font-size: 15px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: 0.3s ease;
+}
+
+.cancel-btn:hover {
+  border-color: #f87171;
+  color: #f87171;
+}
+
+.submit-btn {
+  background-color: #3b82f6; 
+  color: #ffffff;
+  border: none;
+  padding: 12px 28px;
+  border-radius: 8px;
+  font-size: 15px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: 0.3s ease;
+}
+
+.submit-btn:hover {
+  background-color: #2563eb;
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.4);
+}
+
+@media (max-width: 600px) { 
+  .submit-area { flex-direction: column; } 
+  .submit-btn, .cancel-btn { width: 100%; } 
+}

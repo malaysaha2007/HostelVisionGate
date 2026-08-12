@@ -1,0 +1,13 @@
+fastapi
+uvicorn
+pymongo
+dnspython
+python-dotenv
+python-multipart
+passlib[bcrypt]==1.7.4
+bcrypt==4.0.1
+python-jose
+cloudinary
+requests
+httpx
+openpyxl

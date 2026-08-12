@@ -1,0 +1,204 @@
+/* BASE PAGE */
+.rules-page {
+  min-height: 100vh;
+  background: linear-gradient(180deg, #071126, #071024);
+  color: #e6eef8;
+}
+
+/* CONTAINER */
+.rules-container {
+  max-width: 1000px;
+  margin: auto;
+  padding: 40px 20px;
+}
+
+/* INTRO SECTION */
+.rules-intro {
+  text-align: center;
+  margin-bottom: 40px;
+}
+
+.rules-intro h2 {
+  font-size: 32px;
+  margin-bottom: 12px;
+  color: #e6eef8;
+}
+
+.rules-intro p {
+  color: #98a6bf;
+  font-size: 16px;
+}
+
+/* GRID */
+.rules-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+/* INDIVIDUAL RULE CARD */
+.rule-card {
+  background: #121b33; 
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 16px;
+  padding: 30px;
+  display: flex;
+  align-items: center;
+  gap: 30px;
+  transition: all 0.3s ease;
+}
+
+.rule-card:hover {
+  transform: translateX(10px);
+  border-color: #06b6d4;
+  box-shadow: 0 8px 28px rgba(6, 182, 212, 0.15);
+}
+
+/* CARD HEADER (Left Side: Number & Icon) */
+.rule-card-header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-width: 80px;
+  border-right: 1px solid rgba(255, 255, 255, 0.08);
+  padding-right: 30px;
+}
+
+.rule-number {
+  font-size: 42px;
+  font-weight: 900;
+  color: rgba(6, 182, 212, 0.15);
+  line-height: 1;
+  margin-bottom: 10px;
+}
+
+.rule-icon {
+  font-size: 28px;
+  color: #06b6d4;
+}
+
+/* CARD CONTENT (Right Side: Text) */
+.rule-content h3 {
+  font-size: 22px;
+  margin-bottom: 10px;
+  color: #e6eef8;
+}
+
+.rule-content p {
+  color: #98a6bf;
+  line-height: 1.7;
+  font-size: 15px;
+  margin: 0;
+}
+
+/* TIME HIGHLIGHT */
+.highlight-time {
+  color: #ef4444;
+  font-weight: 700;
+  background: rgba(239, 68, 68, 0.1);
+  padding: 2px 8px;
+  border-radius: 6px;
+  margin: 0 4px;
+}
+
+/* EMERGENCY SECTION (Bottom Banner) */
+.emergency-section {
+  background: linear-gradient(135deg, rgba(239, 68, 68, 0.1) 0%, rgba(185, 28, 28, 0.05) 100%);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  border-radius: 16px;
+  padding: 30px;
+  margin-top: 50px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 20px;
+}
+
+.emergency-content {
+  display: flex;
+  align-items: center;
+  gap: 25px;
+}
+
+.emergency-icon {
+  font-size: 32px;
+  color: #ef4444;
+  background: rgba(239, 68, 68, 0.15);
+  padding: 18px;
+  border-radius: 50%;
+  min-width: 68px;
+  min-height: 68px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.emergency-content h3 {
+  color: #fca5a5;
+  font-size: 22px;
+  margin-bottom: 8px;
+}
+
+.emergency-content p {
+  color: #98a6bf;
+  font-size: 15px;
+  line-height: 1.5;
+  margin: 0;
+}
+
+.emergency-btn {
+  background: #ef4444;
+  color: white;
+  border: none;
+  padding: 14px 28px;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.emergency-btn:hover {
+  background: #dc2626;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 15px rgba(239, 68, 68, 0.4);
+}
+
+/* RESPONSIVE DESIGN FOR MOBILE */
+@media(max-width: 768px) {
+  .rule-card {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 20px;
+  }
+  
+  .rule-card-header {
+    flex-direction: row;
+    border-right: none;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    padding-right: 0;
+    padding-bottom: 20px;
+    width: 100%;
+    justify-content: flex-start;
+    gap: 15px;
+  }
+
+  .rule-number {
+    margin-bottom: 0;
+  }
+
+  .emergency-section {
+    flex-direction: column;
+    text-align: center;
+  }
+
+  .emergency-content {
+    flex-direction: column;
+  }
+
+  .emergency-btn {
+    width: 100%;
+  }
+}

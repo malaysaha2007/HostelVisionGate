@@ -1,0 +1,365 @@
+/* ==================================================
+   STUDENT LOGIN PAGE
+================================================== */
+
+.student-login-page {
+  min-height: 100vh;
+
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+
+  background:
+    linear-gradient(
+      90deg,
+      #000814 0%,
+      #001845 50%,
+      #000814 100%
+    );
+
+  color: white;
+
+  overflow: hidden;
+}
+
+/* ==================================================
+   LOGIN CARD
+================================================== */
+
+.login-box {
+  width: 90%;
+  max-width: 500px;
+
+  margin: 18px auto;
+
+  padding: 20px 20px;
+
+  background: rgba(10, 25, 55, 0.88);
+
+  border: 1px solid rgba(59, 130, 246, 0.22);
+
+  border-radius: 22px;
+
+  backdrop-filter: blur(18px);
+
+  box-shadow:
+    0 0 35px rgba(37, 99, 235, 0.12),
+    0 15px 45px rgba(0, 0, 0, 0.45);
+
+  animation: fadeUp 0.45s ease;
+}
+
+/* ==================================================
+   TITLE
+================================================== */
+
+.login-box h2 {
+  text-align: center;
+
+  font-size: 2rem;
+
+  font-weight: 700;
+
+  letter-spacing: -0.5px;
+
+  color: white;
+
+  margin-bottom: 8px;
+}
+
+
+
+/* ==================================================
+   FORM
+================================================== */
+
+.login-box form {
+  display: flex;
+  flex-direction: column;
+}
+
+.login-box label {
+  color: #cbd5e1;
+
+  font-size:14px;
+
+  font-weight: 600;
+
+  margin-bottom: 8px;
+
+  margin-top: 14px;
+}
+
+/* ==================================================
+   INPUTS
+================================================== */
+
+.login-box input {
+  width: 100%;
+
+  height: 56px;
+
+  padding: 0 18px;
+
+  border-radius: 14px;
+
+  border: 1px solid rgba(255,255,255,0.12);
+
+  background: rgba(255,255,255,0.06);
+
+  color: rgb(227, 219, 219);
+
+  font-size: 1rem;
+
+  transition: all 0.3s ease;
+}
+
+.login-box input::placeholder {
+  color: #94a3b8;
+  font-size: 0.98rem;
+}
+
+.login-box input:focus {
+  outline: none;
+
+  border-color: #3b82f6;
+
+  box-shadow:
+    0 0 0 4px rgba(59,130,246,0.15);
+}
+
+/* ==================================================
+   PASSWORD
+================================================== */
+
+.password-wrapper {
+  position: relative;
+}
+
+.password-wrapper input {
+  padding-right: 60px;
+}
+
+.eye-btn {
+  position: absolute;
+
+  top: 50%;
+  right: 18px;
+
+  transform: translateY(-50%);
+
+  color: #cbd5e1;
+
+  cursor: pointer;
+
+  font-size: 22px;
+
+  transition: 0.2s ease;
+}
+
+.eye-btn:hover {
+  color: #3b82f6;
+}
+
+/* ==================================================
+   BUTTONS
+================================================== */
+
+.actions {
+  display: flex;
+
+  gap: 12px;
+
+  margin-top: 24px;
+}
+
+.actions button {
+  flex: 1;
+
+  height: 50px;
+
+  border: none;
+
+  border-radius: 14px;
+
+  font-size: 1.1rem;
+
+  font-weight: 700;
+
+  cursor: pointer;
+
+  transition: all 0.25s ease;
+}
+
+
+/* FORGOT */
+
+.forgot-btn {
+  background: rgba(59, 130, 246, 0.1);
+  color: #60a5fa;
+  border: 1px solid rgba(59, 130, 246, 0.4);
+}
+
+.forgot-btn:hover {
+  background: rgba(59, 130, 246, 0.2);
+  color: #93c5fd;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 15px rgba(59, 130, 246, 0.2);
+}
+
+/* LOGIN */
+
+.login {
+  background: #2563eb;
+  color: white;
+}
+
+.login:hover {
+  background: #3b82f6;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(59, 130, 246, 0.4);
+}
+
+/* ==================================================
+   DIVIDER
+================================================== */
+
+.or-divider {
+  display: flex;
+
+  align-items: center;
+
+  margin: 24px 0;
+}
+
+.or-divider::before,
+.or-divider::after {
+  content: "";
+
+  flex: 1;
+
+  height: 1px;
+
+  background: rgba(255,255,255,0.15);
+}
+
+.or-divider span {
+  padding: 0 16px;
+
+  color: #94a3b8;
+
+  font-size: 1rem;
+
+  font-weight: 700;
+}
+
+/* ==================================================
+   GOOGLE SECTION
+================================================== */
+
+.google-signup-section {
+  text-align: center;
+}
+
+.google-signup-section p {
+  color: #e2e8f0;
+
+  font-size: 1.1rem;
+
+  font-weight: 700;
+
+  margin-bottom: 14px;
+}
+
+.google-btn-wrapper {
+  display: flex;
+  justify-content: center;
+
+  transform: scale(1.05);
+}
+
+/* ==================================================
+   ANIMATION
+================================================== */
+
+@keyframes fadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ==================================================
+   TABLET
+================================================== */
+
+@media (max-width: 768px) {
+
+  .student-login-page {
+    overflow-y: auto;
+  }
+
+  .login-box {
+    margin: 20px;
+    padding: 28px;
+  }
+
+  .login-box h2 {
+    font-size: 2.1rem;
+  }
+
+  .actions {
+    flex-direction: column;
+  }
+}
+
+/* ==================================================
+   MOBILE
+================================================== */
+
+@media (max-width: 480px) {
+
+  .student-login-page {
+    overflow-y: auto;
+  }
+
+  .login-box {
+    width: 94%;
+    padding: 22px;
+  }
+
+  .login-box h2 {
+    font-size: 1.8rem;
+  }
+
+  .login-subtitle {
+    font-size: 0.9rem;
+  }
+
+  .login-box label {
+    font-size: 0.95rem;
+  }
+
+  .login-box input {
+    height: 52px;
+    font-size: 0.95rem;
+  }
+
+  .actions button {
+    height: 52px;
+    font-size: 0.95rem;
+  }
+
+  .google-signup-section p {
+    font-size: 1rem;
+  }
+
+  .google-btn-wrapper {
+    transform: scale(1);
+  }
+}
