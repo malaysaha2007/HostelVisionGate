@@ -5,15 +5,15 @@ import { FaSyncAlt, FaSearch, FaFilter, FaHistory, FaUndo } from "react-icons/fa
 
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
-import AdminPortalHeader from "../components/AdminPortalHeader";
+import HostelPortalHeader from "../components/HostelPortalHeader";
 
 import "../styles/ActivityLogs.css";
 
 const ROLE_CONFIGS = {
-  "Director": {
-    letter: "D",
-    label: "Director",
-    className: "director-avatar",
+  "Warden": {
+    letter: "W",
+    label: "Warden",
+    className: "warden-avatar",
   },
 
   "Guard": {
@@ -22,10 +22,10 @@ const ROLE_CONFIGS = {
     className: "guard-avatar",
   },
 
-  "Dean Academic": {
-    letter: "DA",
-    label: "Dean Academic",
-    className: "dean-avatar",
+  "Caretaker": {
+    letter: "C",
+    label: "Caretaker",
+    className: "caretaker-avatar",
   },
 
   "Hostel Warden": {
@@ -50,7 +50,23 @@ function ActivityLogs() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const location = useLocation();
-  const admin = location.state?.admin;
+  const user = location.state?.user;
+
+  const allowedRoles = useMemo(() => {
+  if (user?.role === "Warden") {
+    return ["Warden", "Caretaker", "Hostel Guard"];
+  }
+
+  if (user?.role === "Caretaker") {
+    return ["Caretaker", "Hostel Guard"];
+  }
+
+  if (user?.role === "Hostel Guard") {
+    return ["Hostel Guard"];
+  }
+
+  return [];
+}, [user]);
 
   // Filter States
   const [roleFilter, setRoleFilter] = useState("All");
@@ -116,19 +132,35 @@ function ActivityLogs() {
 
   // 2. Client-Side Real-Time Filter Logic
   const filteredLogs = logs.filter((log) => {
-    const roleMatch = roleFilter === "All" || log.role === roleFilter;
-    const hostelMatch = hostelFilter === "All" || log.hostel === hostelFilter;
-    const actionMatch = actionFilter === "All" || log.action_type === actionFilter;
-    
-    const query = search.toLowerCase();
-    const searchMatch =
-      (log.role || "").toLowerCase().includes(query) ||
-      (log.hostel || "").toLowerCase().includes(query) ||
-      (log.action_type || "").toLowerCase().includes(query) ||
-      (log.description || "").toLowerCase().includes(query);
 
-    return roleMatch && hostelMatch && actionMatch && searchMatch;
-  });
+  // Permission check
+  const permissionMatch = allowedRoles.includes(log.role);
+
+  // User-selected role filter
+  const roleMatch =
+    roleFilter === "All" || log.role === roleFilter;
+
+  const hostelMatch = log.hostel === user?.hostel;
+
+  const actionMatch =
+    actionFilter === "All" || log.action_type === actionFilter;
+
+  const query = search.toLowerCase();
+
+  const searchMatch =
+    (log.role || "").toLowerCase().includes(query) ||
+    (log.hostel || "").toLowerCase().includes(query) ||
+    (log.action_type || "").toLowerCase().includes(query) ||
+    (log.description || "").toLowerCase().includes(query);
+
+  return (
+    permissionMatch &&
+    roleMatch &&
+    hostelMatch &&
+    actionMatch &&
+    searchMatch
+  );
+});
 
   // 3. Temporal Feed Grouping (Today / Yesterday / Older)
   const groupedLogs = useMemo(() => {
@@ -169,8 +201,8 @@ function ActivityLogs() {
 
   return (
     <>
-      <Navbar admin={admin} showAdminDashboard={true} showLogout={true} />
-      <AdminPortalHeader admin={admin} />
+      <Navbar user={user} showAdminDashboard={true} showLogout={true} />
+      <HostelPortalHeader/>
 
       <div className={`soc-dashboard-container ${refreshing ? "feed-refreshing" : ""}`}>
         
@@ -193,22 +225,23 @@ function ActivityLogs() {
           <div className="dropdown-group">
             <div className="select-styled-container">
               <FaFilter className="inline-filter-icon" />
-              <select value={roleFilter} onChange={(e) => setRoleFilter(e.target.value)}>
+              <select
+                value={roleFilter}
+                onChange={(e) => setRoleFilter(e.target.value)}
+              >
                 <option value="All">All Consoles</option>
-                <option value="Director">Director</option>
-                <option value="Dean Academic">Dean Academic</option>
-                <option value="Guard">Guard</option>
-              </select>
-            </div>
 
-            <div className="select-styled-container">
-              <select value={hostelFilter} onChange={(e) => setHostelFilter(e.target.value)}>
-                <option value="All">All Locations</option>
-                <option value="Hostel 1">Hostel 1</option>
-                <option value="Hostel 2">Hostel 2</option>
-                <option value="Hostel 3">Hostel 3</option>
-                <option value="Hostel 4">Hostel 4</option>
-                <option value="Hostel 5">Hostel 5</option>
+                {allowedRoles.includes("Warden") && (
+                  <option value="Warden">Warden</option>
+                )}
+
+                {allowedRoles.includes("Caretaker") && (
+                  <option value="Caretaker">Caretaker</option>
+                )}
+
+                {allowedRoles.includes("Hostel Guard") && (
+                  <option value="Hostel Guard">Hostel Guard</option>
+                )}
               </select>
             </div>
 

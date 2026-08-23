@@ -7,7 +7,7 @@ import Footer from "../components/Footer";
 import HostelPortalHeader from "../components/HostelPortalHeader";
 import API from "../services/api";
 import "../styles/HostelStudents.css";
-import { FaSyncAlt, FaFileCsv } from "react-icons/fa";
+import { FaSyncAlt, FaFileCsv, FaEnvelope } from "react-icons/fa";
 
 function HostelStudents() {
   const location = useLocation();
@@ -135,7 +135,10 @@ const [deleteConfirmText,
   return (
     <div className={`hostel-students-page ${refreshing ? "page-refresh" : ""}`}>
       {/* NAVBAR */}
-      <Navbar showLogout={true} />
+      <Navbar
+      user={user}
+       showLogout={true} 
+      showActivityLogs={true}/>
       <HostelPortalHeader />
 
       {/* =========================
@@ -285,6 +288,21 @@ const [deleteConfirmText,
               >
                 <FaFileCsv />
               </button>
+              {user.role!== "Hostel Guard" && (
+                <button
+                className="icon-btn"
+                onClick={() =>
+                  navigate("/curfew-mail", {
+                    state: {user}
+                  })
+                }
+                title="Send Email"
+              >
+                <FaEnvelope/>
+              </button>)
+
+              }
+              
             </div>
           </div>
 

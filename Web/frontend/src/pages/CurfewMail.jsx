@@ -7,7 +7,7 @@ import API from "../services/api";
 
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
-import AdminPortalHeader from "../components/AdminPortalHeader";
+import HostelPortalHeader from "../components/HostelPortalHeader";
 
 import "../styles/AdminDashboard.css";
 import "../styles/CurfewMail.css";
@@ -16,7 +16,7 @@ function CurfewMail() {
   const navigate = useNavigate();
   const location = useLocation();
 
-  const admin = location.state?.admin;
+  const user = location.state?.user;
 
   const [students, setStudents] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -81,12 +81,13 @@ function CurfewMail() {
   return (
     <>
       <Navbar
-        admin={admin}
+        user={user}
         showActivityLogs={true}
+        showAdminDashboard={true}
         showLogout={true}
       />
 
-      <AdminPortalHeader admin={admin} />
+      <HostelPortalHeader/>
       <div
         className={`admin-dashboard-page ${
           refreshing ? "page-refresh" : ""

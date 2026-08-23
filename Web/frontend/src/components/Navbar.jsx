@@ -3,7 +3,7 @@ import "../styles/Navbar.css";
 import { FaPowerOff } from "react-icons/fa";
 
 function Navbar({
-  admin,
+  user,
   showLogin = false,
   showActivityLogs = false,
   showAdminDashboard = false,
@@ -11,6 +11,7 @@ function Navbar({
 })
 
 {
+  
   const navigate = useNavigate();
 
  const handleLogout = () => {
@@ -67,10 +68,10 @@ function Navbar({
               About Us
             </Link>
 
-            {showActivityLogs && (
+            {showActivityLogs && user.role !== "Hostel Guard" && (
              <Link
   to="/activity-logs"
-  state={{ admin }}
+  state={{ user }}
 >
   Activity Logs
 </Link>
@@ -78,8 +79,8 @@ function Navbar({
 
             {showAdminDashboard && (
              <Link
-  to="/admin-dashboard"
-  state={{ admin }}
+  to="/HostelStudents"
+  state={{ user }}
 >
   Dashboard
 </Link>
@@ -93,10 +94,6 @@ function Navbar({
     </a>
 
     <div className="dropdown-menu">
-
-    <Link to="/AdminLogin">
-        Admin Login
-      </Link>
 
        <Link to="/HostelLogin">
         Hostel Login
