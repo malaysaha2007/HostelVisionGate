@@ -19,6 +19,7 @@
 
 .student-profile-hero{
     display:flex;
+    position: relative;
     align-items:center;
     gap:35px;
     background:rgba(15,25,50,.82);

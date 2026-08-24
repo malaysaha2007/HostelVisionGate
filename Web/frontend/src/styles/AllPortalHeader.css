@@ -2,91 +2,68 @@
    HEADER WRAPPER
 ========================= */
 .portal-hero {
- 
   padding: 16px 0 10px 30px;
   border-radius: 24px;
-  background:    #081126;
+  background: #081126;
   margin-bottom: 20px;
   overflow: visible; /* <--- THIS FIXES THE CLIPPED MENU! */
 }
-.vacation-avatar {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-.vacation {
-  margin-left: 5px;
-  padding: 9px 16px;
-  background: #3b82f6;
-  color: white;
-  border: none;
-  border-radius: 8px;
-  cursor: pointer;
-  font-weight: 600;
-  transition: background 0.2s;
-  width: 150px;
-  height: 40px;
-}
-.vacation:hover {
-  background: #2563eb;
-}
-.vacation-bothButtons {
-  display: flex;
-  margin-right: 30px;
-  gap: 16px;
-}
+
 .student-portal-hero-content {
   display: flex;
   justify-content: space-between;
   align-items: center;
 }
 
+.portal-header-layout {
+  display: flex;
+  align-items: center;
+  width: 100%;
+}
+
+.portal-left {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.portal-right {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex: 1;
+}
+
+/* =========================
+   AVATARS & ICONS
+========================= */
+.student-avatar-wrapper {
+  position: relative;
+}
+
 .student-header-avatar {
   display: flex;
   align-items: center;
   justify-content: center;
+  position: relative;
+  cursor: pointer;
 }
 
 .student-header-image {
   width: 72px;
   height: 72px;
-
   border-radius: 50%;
-
   object-fit: cover;
-
   border: 3px solid rgba(255, 255, 255, 0.15);
-
   box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
 }
 
 .student-header-fallback {
   width: 72px;
   height: 72px;
-
   border-radius: 50%;
-
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.student-avatar-wrapper {
-  position: relative;
-}
-
-.student-header-avatar {
-  position: relative;
-  cursor: pointer;
-}
-
-
-
-.student-header-fallback {
-  width: 72px;
-  height: 72px;
-  border-radius: 50%;
-  background: rgba(255,255,255,0.12);
+  background: rgba(255, 255, 255, 0.12);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -94,41 +71,44 @@
 }
 
 .portal-hero-icon {
-  width: 54px;
-  height: 54px;
+  width: 60px;
+  height: 60px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 28px;
+  font-size: 30px;
   background: rgba(255, 255, 255, 0.95);
-  border-radius: 12px;
+  border-radius: 14px;
   flex-shrink: 0;
 }
 
-.portal-hero-content h2 {
+/* =========================
+   TYPOGRAPHY
+========================= */
+.portal-hero-content h2,
+.portal-text h2 {
   margin: 0;
   color: #ffffff;
-  font-size: 18px;
+  font-size: 20px;
   font-weight: 700;
 }
 
-.portal-hero-content p {
+.portal-hero-content p,
+.portal-text p {
   margin-top: 4px;
   margin-bottom: 0;
   color: #cbd5e1;
   font-size: 15px;
 }
 
-
-
-
-
-/* Right-side profile */
-
+/* =========================
+   RIGHT-SIDE PROFILE
+========================= */
 .portal-user-wrapper {
   display: flex;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-end;
+  width: 100%;
 }
 
 .portal-user {
@@ -166,124 +146,103 @@
   text-align: center;
 }
 
-
-
 /* =========================
-   VACATION BUTTONS (From original file)
+   VACATION SECTION (Matched to Image)
 ========================= */
-.vacation-avatar {
+
+/* The outer bordered box */
+.vacation-section-container {
+  position: absolute;
+  top: 20px;
+  right: 25px;
+  background: #081126; /* Matches the hero background */
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 16px;
+  padding: 20px 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  box-shadow: inset 0 0 20px rgba(255, 255, 255, 0.02);
+}
+
+/* Button wrapper */
+.vacation-bothButtons {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  position: relative;
+}
+
+/* Base Shared Button Styles */
+.vacation {
   display: flex;
   align-items: center;
   justify-content: center;
-}
-
-.vacation {
-  margin-left: 5px;
-  padding: 9px 16px;
-  background: #3b82f6;
-  color: white;
-  border: none;
-  border-radius: 8px;
+  gap: 8px; /* Space between icon and text */
+  height: 46px;
+  padding: 0 24px;
+  border-radius: 10px;
   cursor: pointer;
+  font-size: 14px;
   font-weight: 600;
-  transition: background 0.2s;
-  width: 150px;
-  height: 40px;
+  transition: all 0.3s ease;
 }
 
-.vacation:hover {
-  background: #2563eb;
+.btn-icon {
+  font-size: 16px;
 }
 
-.vacation-bothButtons {
-  display: flex;
-  margin-right: 30px;
-  gap: 16px;
+/* PRIMARY BUTTON: Apply for Vacation */
+.vacation.btn-primary {
+  background: rgb(59, 130, 246);
+  color: #ffffff;
+  border: none;
+
 }
 
+.vacation.btn-primary:hover {
+  transform: translateY(-2px);
+}
+
+/* SECONDARY BUTTON: Vacation Status */
+.vacation.btn-secondary {
+  background: transparent;
+  color: #f1f5f9;
+  border: 1px solid rgba(59, 130, 246, 0.15);
+}
+.vacation.btn-secondary .btn-icon {
+  color: #3b82f6;
+}
+.vacation.btn-secondary:hover {
+  background: rgba(59, 130, 246, 0.08);
+  border-color: rgba(59, 130, 246, 0.3);
+  transform: translateY(-2px);
+}
+
+/* Subtitle underneath */
+.vacation-subtitle {
+  color: #3b82f6;
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0.5px;
+}
+
+/* =========================
+   LOGOUT BUTTON
+========================= */
 .logout {
   color: #ef4444;
 }
 
 .logout:hover {
-  background: rgba(
-    239,
-    68,
-    68,
-    0.12
-  );
+  background: rgba(239, 68, 68, 0.12);
 }
 
-
-
-
-
-.portal-header-layout {
-  display: flex;
-  align-items: center;
-  width: 100%;
-}
-
-.portal-left {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-}
-
-.portal-right {
-  margin-left: auto;
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  flex: 1;
-
-
-}
-
-.portal-user-wrapper {
-  display: flex;
-  justify-content: flex-end;
-  align-items: center;
-  width: 100%;
-}
-
-.portal-hero-icon {
-  width: 60px;
-  height: 60px;
-
-  display: flex;
-  align-items: center;
-  justify-content: center;
-
-  background: rgba(255,255,255,0.95);
-
-  border-radius: 14px;
-
-  font-size: 30px;
-
-  flex-shrink: 0;
-}
-
-.portal-text {
-  display: flex;
-  flex-direction: column;
-}
-
-.portal-text h2 {
-  margin: 0;
-  color: white;
-  font-size: 20px;
-  font-weight: 700;
-}
-
-.portal-text p {
-  margin: 4px 0 0;
-  color: #cbd5e1;
-  font-size: 15px;
-}
-
+/* =========================
+   MOBILE RESPONSIVENESS
+========================= */
 @media (max-width: 768px) {
-
   .portal-header-layout {
     flex-direction: column;
     align-items: flex-start;
@@ -292,5 +251,31 @@
 
   .portal-right {
     width: 100%;
+  }
+
+  .student-profile-hero {
+    padding-bottom: 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .vacation-section-container {
+    position: relative; 
+    top: auto;
+    right: auto;
+    margin-top: 24px;
+    width: 100%;
+    padding: 16px;
+  }
+
+  .vacation-bothButtons {
+    width: 100%;
+    flex-direction: column; 
+    gap: 12px;
+  }
+
+  .vacation {
+    width: 100%; /* Full width buttons on mobile */
   }
 }

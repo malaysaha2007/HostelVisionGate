@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { FaBed, FaPhoneAlt, FaUserFriends, FaEnvelope } from "react-icons/fa";
+import { FaBed, FaPhoneAlt, FaUserFriends, FaEnvelope, FaRegCalendarAlt, FaPlane, FaRegStar } from "react-icons/fa";
 
 import "../styles/StudentProfile.css";
 
@@ -176,35 +176,63 @@ function StudentProfile() {
       
       <div className="profile-container">
         {/* ================= HERO PROFILE CARD ================= */}
-        <div className="student-profile-hero">
-          <div className="hero-left">
-            <img
-              src={
-                student.face_images?.length
-                  ? student.face_images[0]
-                  : "/default-avatar.png"
-              }
-              alt="Student"
-              className="hero-profile-image"
-            />
-          </div>
+       <div className="student-profile-hero">
 
-          <div className="hero-right">
-            <h1>{student.name}</h1>
-            <p className="hero-roll">{student.roll}</p>
-            <p className="hero-course">
-              {student.branch} • {student.hostel}
-            </p>
+  <div className="hero-left">
+    <img
+      src={
+        student.face_images?.length
+          ? student.face_images[0]
+          : "/default-avatar.png"
+      }
+      alt="Student"
+      className="hero-profile-image"
+    />
+  </div>
 
-            <div
-              className={`hero-status ${
-                isInside ? "status-inside" : "status-outside"
-              }`}
-            >
-              {statusText}
-            </div>
-          </div>
-        </div>
+  <div className="hero-right">
+    <h1>{student.name}</h1>
+
+    <p className="hero-roll">
+      {student.roll}
+    </p>
+
+    <p className="hero-course">
+      {student.branch} • {student.hostel}
+    </p>
+
+    <div
+      className={`hero-status ${
+        isInside ? "status-inside" : "status-outside"
+      }`}
+    >
+      {statusText}
+    </div>
+  </div>
+
+<div className="vacation-section-container">
+    <div className="vacation-bothButtons">
+      <button
+        className="vacation btn-primary"
+        onClick={() => navigate("/student/apply-vacation")}
+      >
+        <FaPlane className="btn-icon" /> Apply for Vacation
+      </button>
+
+      <button
+        className="vacation btn-secondary"
+        onClick={() => navigate("/student/vacation-status")}
+      >
+        <FaRegCalendarAlt className="btn-icon" /> Vacation Status
+      </button>
+    </div>
+    
+    <div className="vacation-subtitle">
+     Plan your time away
+    </div>
+  </div>
+
+</div>
 
         {/* ================= STUDENT DETAILS ================= */}
         <div className="student-profile-grid">

@@ -94,7 +94,7 @@ function StudentPortalHeader({
           >
             <div className="vacation-avatar">
 
-              {showVacationButtons && (
+              {/* {showVacationButtons && (
                 <div className="vacation-bothButtons">
 
                   <button
@@ -116,7 +116,7 @@ function StudentPortalHeader({
                   </button>
 
                 </div>
-              )}
+              )} */}
 
               <div
                 className="student-header-avatar"
