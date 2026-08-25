@@ -116,34 +116,63 @@
   align-items: center;
   justify-content: center;
   background: transparent;
+  cursor: pointer;
 }
 
+/* The outer pill shape */
 .profile-card {
-  background: transparent !important;
-  border: none !important;
-  box-shadow: none !important;
-  padding: 0 !important;
-  margin: 0 !important;
+  background-color: #0f172a; 
+  border: 1px solid #1e3a8a;
+  padding: 6px 16px 6px 8px; 
+  border-radius: 50px;
+  display: flex;
+  align-items: center;
+  gap: 12px; 
+  transition: all 0.2s ease-in-out;
 }
 
+.profile-card:hover {
+  background-color: rgba(30, 58, 138, 0.4);
+}
+
+/* The circular avatar container */
+.profile-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%; 
+  border: 1px solid #2563eb; 
+  background-color: #1e3a8a; 
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden; 
+}
+
+/* Styles the FA icon inside the circle */
+.profile-avatar i {
+  color: #93c5fd; /* A nice light blue that pops against the dark background */
+  font-size: 18px; /* Perfectly sizes the icon for a 36px circle */
+}
+
+/* Container for the text */
 .profile-details {
   display: flex;
   flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 7px;
+  align-items: flex-start; /* Left-aligns the text */
 }
 
-.profile-icon {
-  font-size: 40px;
-  color: #60a5fa;
-}
-
+/* The bright blue username text */
 .profile-name {
-  color: #fff;
-  font-size: 14px;
+  color: #0000ff; 
+  font-size: 1rem;
   font-weight: 500;
-  text-align: center;
+  line-height: 1.2;
+}
+
+/* The grey role text */
+.profile-role {
+  color: #94a3b8;
+  font-size: 0.8rem;
 }
 
 /* =========================
@@ -198,7 +227,6 @@
   background: rgb(59, 130, 246);
   color: #ffffff;
   border: none;
-
 }
 
 .vacation.btn-primary:hover {
@@ -211,9 +239,11 @@
   color: #f1f5f9;
   border: 1px solid rgba(59, 130, 246, 0.15);
 }
+
 .vacation.btn-secondary .btn-icon {
   color: #3b82f6;
 }
+
 .vacation.btn-secondary:hover {
   background: rgba(59, 130, 246, 0.08);
   border-color: rgba(59, 130, 246, 0.3);
