@@ -34,7 +34,8 @@ function Footer() {
               <h4>Development Team</h4>
               <a href="/">Malay</a>
               <a href="/">Manvendra</a>
-              <a href="/">Aditi</a>
+              <a href="/">Aditi Verma</a>
+              <a href="/">Aditi Chouhan</a>
             </div>
 
             <div className="footer-column">

@@ -644,6 +644,7 @@ tbody tr:hover .student-table-avatar-fallback {
   padding: 18px;
   backdrop-filter: blur(12px);
   transition: all 0.3s ease;
+  align-items: center;
 }
 
 .detail-card:hover {
@@ -665,7 +666,7 @@ tbody tr:hover .student-table-avatar-fallback {
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 1px;
-  margin-bottom: 10px;
+  margin-block: 10px;
 }
 
 /* ==================================================

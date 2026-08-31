@@ -205,7 +205,164 @@
   box-shadow: 0 4px 12px rgba(37, 99, 235, 0.4);
 }
 
-@media (max-width: 600px) { 
-  .submit-area { flex-direction: column; } 
-  .submit-btn, .cancel-btn { width: 100%; } 
+/* =========================
+   VACATION STATUS MESSAGE
+========================= */
+
+.vacation-locked-message {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  padding: 20px 22px;
+  margin: 50px 24px 0;
+  border-radius: 14px;
+}
+
+/* Icon */
+
+.pending-icon,
+.approved-icon {
+  width: 42px;
+  height: 42px;
+  min-width: 42px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border-radius: 50%;
+  font-size: 21px;
+  font-weight: 800;
+}
+
+/* Content */
+
+.pending-content,
+.approved-content {
+  flex: 1;
+}
+
+/* Title */
+
+.pending-title,
+.approved-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+
+  font-size: 17px;
+  font-weight: 700;
+}
+
+/* Badge */
+
+.pending-badge,
+.approved-badge {
+  padding: 4px 9px;
+  border-radius: 20px;
+
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.7px;
+}
+
+/* Main text */
+
+.pending-content p,
+.approved-content p {
+  margin: 0;
+  color: #d1d5db;
+  line-height: 1.6;
+  font-size: 14px;
+}
+
+/* Secondary text */
+
+.pending-note,
+.approved-note {
+  margin-top: 6px !important;
+  color: #9ca3af !important;
+  font-size: 13px !important;
+}
+
+/* =========================
+   PENDING
+========================= */
+
+.vacation-locked-message.pending {
+  background: rgba(245, 158, 11, 0.08);
+  border: 1px solid rgba(245, 158, 11, 0.55);
+  border-left: 5px solid #f59e0b;
+  box-shadow: 0 8px 24px rgba(245, 158, 11, 0.08);
+}
+
+.pending-icon {
+  background: rgba(245, 158, 11, 0.15);
+}
+
+.pending-title {
+  color: #f59e0b;
+}
+
+.pending-badge {
+  background: rgba(245, 158, 11, 0.15);
+  border: 1px solid rgba(245, 158, 11, 0.35);
+  color: #f59e0b;
+}
+
+.pending-content strong {
+  color: #fbbf24;
+}
+
+/* =========================
+   APPROVED
+========================= */
+
+.vacation-locked-message.approved {
+  background: rgba(34, 197, 94, 0.08);
+  border: 1px solid rgba(34, 197, 94, 0.5);
+  border-left: 5px solid #22c55e;
+  box-shadow: 0 8px 24px rgba(34, 197, 94, 0.08);
+}
+
+.approved-icon {
+  background: rgba(34, 197, 94, 0.15);
+  color: #22c55e;
+}
+
+.approved-title {
+  color: #22c55e;
+}
+
+.approved-badge {
+  background: rgba(34, 197, 94, 0.15);
+  border: 1px solid rgba(34, 197, 94, 0.35);
+  color: #22c55e;
+}
+
+/* =========================
+   MOBILE
+========================= */
+
+@media (max-width: 600px) {
+  .vacation-locked-message {
+    margin-left: 10px;
+    margin-right: 10px;
+    padding: 18px;
+  }
+
+  .pending-title,
+  .approved-title {
+    flex-wrap: wrap;
+  }
+
+  .submit-area {
+    flex-direction: column;
+  }
+
+  .submit-btn,
+  .cancel-btn {
+    width: 100%;
+  }
 }
