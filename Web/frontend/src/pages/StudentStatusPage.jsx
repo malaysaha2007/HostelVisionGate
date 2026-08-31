@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useParams, useLocation } from "react-router-dom";
-import { FaSyncAlt } from "react-icons/fa";
+import { FaSyncAlt, FaSearch } from "react-icons/fa";
 
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
@@ -23,6 +23,8 @@ function StudentStatusPage() {
   const [denyReason, setDenyReason] = useState("");
   const [vacationFilter, setVacationFilter] = useState("Pending");
   const [selectedRequest, setselectedRequest] = useState(null);
+  
+  const [searchQuery, setSearchQuery] = useState("");
 
   useEffect(() => {
     loadStudents();
@@ -36,9 +38,6 @@ function StudentStatusPage() {
       const response = await API.get(`/hostel/logs/${hostel}`);
       const data = response.data;
 
-      // =========================
-      // OUTSIDE
-      // =========================
       if (type === "outside") {
         const outsideData = data.outsideStudents.map((student) => ({
           ...student,
@@ -46,9 +45,6 @@ function StudentStatusPage() {
         }));
         setStudents(outsideData);
       }
-      // =========================
-      // CURFEW
-      // =========================
       else if (type === "curfew") {
         const curfewData = data.curfewStudents.map((student) => ({
           ...student,
@@ -56,9 +52,6 @@ function StudentStatusPage() {
         }));
         setStudents(curfewData);
       }
-      // =========================
-      // LEAVE
-      // =========================
       else if (type === "leave") {
         const leaveData = data.leaveStudents.map((student) => ({
           ...student,
@@ -66,9 +59,6 @@ function StudentStatusPage() {
         }));
         setStudents(leaveData);
       }
-      // =========================
-      // VACATION
-      // =========================
       else if (type === "vacation") {
         const response = await API.get(`/vacation/${hostel}`);
         const vacationData = response.data.map((request) => ({
@@ -89,22 +79,11 @@ function StudentStatusPage() {
     }
   };
 
-  // =========================
-  // PAGE TITLE
-  // =========================
   const getTitle = () => {
-    if (type === "outside") {
-      return "Students Outside Campus";
-    }
-    if (type === "curfew") {
-      return "Outside After Curfew";
-    }
-    if (type === "leave") {
-      return "Leave / Special Purpose";
-    }
-    if (type === "vacation") {
-      return "Vacation Applications";
-    }
+    if (type === "outside") return "Students Outside Campus";
+    if (type === "curfew") return "Outside After Curfew";
+    if (type === "leave") return "Leave / Special Purpose";
+    if (type === "vacation") return "Vacation Applications";
     return "Student Status";
   };
 
@@ -138,34 +117,58 @@ function StudentStatusPage() {
     }
   };
 
+  const searchedStudents = students.filter((student) => {
+    if (!searchQuery) return true;
+    
+    const query = searchQuery.toLowerCase();
+    
+    const roll = (student.roll_no || student.roll || "").toLowerCase();
+    const dest = (student.destination || student.purpose || "").toLowerCase();
+    const reason = (student.reason || "").toLowerCase();
+    const name = (student.name || "").toLowerCase();
+
+    return (
+      roll.includes(query) ||
+      dest.includes(query) ||
+      reason.includes(query) ||
+      name.includes(query)
+    );
+  });
+
   const filteredStudents =
     type === "vacation"
-      ? students
+      ? searchedStudents
           .filter((request) => request.hostel_status === vacationFilter)
           .sort((a, b) => b._id.localeCompare(a._id))
-      : students;
+      : searchedStudents;
 
   return (
     <div className={`student-status-page ${refreshing ? "page-refresh" : ""}`}>
-      {/* NAVBAR */}
       <Navbar showLogout={true} />
       <HostelPortalHeader />
 
-      {/* TITLE */}
+      {/* TITLE WITH UNDERLINE */}
       <div className="status-title-section">
         <h1>{getTitle()}</h1>
         <p>{hostel}</p>
+        <div className="title-underline"></div>
       </div>
 
-      {/* CONTENT */}
       <div className="status-container">
         <div className="status-card">
-          {/* SEARCH */}
+          
           <div className="status-topbar">
-            <input
-              type="text"
-              placeholder="Search by Name, Roll Number or Room..."
-            />
+            <div className="search-input-wrapper">
+              <FaSearch className="search-icon" />
+              <input
+                type="text"
+                className="modern-search-input"
+                placeholder="Search by Roll Number, Name..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+            </div>
+            
             <button
               className="icon-btn"
               onClick={loadStudents}
@@ -176,27 +179,26 @@ function StudentStatusPage() {
             </button>
           </div>
 
-          {/* COUNT */}
           <div className="status-count">
-            Showing {type === "vacation" ? filteredStudents.length : students.length} Students
+            Showing {filteredStudents.length} Students
           </div>
 
           {type === "vacation" && (
             <div className="vacation-filters">
               <button
-                className={vacationFilter === "Pending" ? "active-filter" : ""}
+                className={`vacation-tab ${vacationFilter === "Pending" ? "active-tab" : "inactive-tab"}`}
                 onClick={() => setVacationFilter("Pending")}
               >
                 Pending
               </button>
               <button
-                className={vacationFilter === "Approved" ? "active-filter" : ""}
+                className={`vacation-tab ${vacationFilter === "Approved" ? "active-tab" : "inactive-tab"}`}
                 onClick={() => setVacationFilter("Approved")}
               >
                 Approved
               </button>
               <button
-                className={vacationFilter === "Denied" ? "active-filter" : ""}
+                className={`vacation-tab ${vacationFilter === "Denied" ? "active-tab" : "inactive-tab"}`}
                 onClick={() => setVacationFilter("Denied")}
               >
                 Denied
@@ -204,7 +206,6 @@ function StudentStatusPage() {
             </div>
           )}
 
-          {/* TABLE */}
           <div className="table-wrapper">
             <table>
               <thead>
@@ -232,7 +233,7 @@ function StudentStatusPage() {
                   <tr>
                     <td colSpan={type === "vacation" ? 6 : 5}>Loading...</td>
                   </tr>
-                ) : students.length === 0 ? (
+                ) : filteredStudents.length === 0 ? (
                   <tr>
                     <td colSpan={type === "vacation" ? 6 : 5}>No Data Found</td>
                   </tr>
@@ -268,7 +269,7 @@ function StudentStatusPage() {
                     </tr>
                   ))
                 ) : (
-                  students.map((student, index) => (
+                  filteredStudents.map((student, index) => (
                     <tr key={index}>
                       <td>{student.roll}</td>
                       <td>{student.purpose || "-"}</td>

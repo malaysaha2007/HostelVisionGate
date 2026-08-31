@@ -13,28 +13,17 @@ import {
 
 import PortalHeader from "./PortalHeader";
 
-
-
 function HostelPortalHeader() {
   const [showMenu, setShowMenu] = useState(false);
-
-   const navigate = useNavigate();
-
-  
-
+  const navigate = useNavigate();
   const menuRef = useRef(null);
-
   const location = useLocation();
-
-  const isLoginPage =
-    location.pathname === "/HostelLogin";
+  const isLoginPage = location.pathname === "/HostelLogin";
 
   let user = null;
 
   try {
-    user = JSON.parse(
-      localStorage.getItem("hostelUser")
-    );
+    user = JSON.parse(localStorage.getItem("hostelUser"));
   } catch {
     user = null;
   }
@@ -49,16 +38,10 @@ function HostelPortalHeader() {
       }
     };
 
-    document.addEventListener(
-      "mousedown",
-      handleClickOutside
-    );
+    document.addEventListener("mousedown", handleClickOutside);
 
     return () => {
-      document.removeEventListener(
-        "mousedown",
-        handleClickOutside
-      );
+      document.removeEventListener("mousedown", handleClickOutside);
     };
   }, []);
 
@@ -76,14 +59,17 @@ function HostelPortalHeader() {
           >
             <div
               className="portal-user"
-              onClick={() =>
-                setShowMenu(!showMenu)
-              }
+              onClick={() => setShowMenu(!showMenu)}
             >
               <div className="profile-card">
+                
+                {/* --- NEW AVATAR SECTION --- */}
+                <div className="profile-avatar">
+  <span style={{ fontSize: '20px' }}>👤</span>
+</div>
+                {/* -------------------------- */}
 
                 <div className="profile-details">
-
                   <div className="profile-name">
                     {user?.name}
                   </div>
@@ -91,13 +77,10 @@ function HostelPortalHeader() {
                   <div className="profile-role">
                     {user?.designation}
                   </div>
-
                 </div>
 
               </div>
             </div>
-
-            
           </div>
         )
       }
