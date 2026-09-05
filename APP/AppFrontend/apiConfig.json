@@ -1,4 +1,4 @@
 {
-  "LOCAL_API": "http://172.27.36.11:8080",
-  "PRODUCTION_API": "https://web-production-8fa4d.up.railway.app"
+    "LOCAL_API": "http://10.7.18.14:8080",
+      "PRODUCTION_API": "https://web-production-8fa4d.up.railway.app"
 }

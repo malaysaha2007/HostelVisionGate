@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "main-gate-entry-exit-app",
+    "name": "Hostel VisionGate App",
     "slug": "main-gate-entry-exit-app",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -18,6 +18,11 @@
         "backgroundImage": "./assets/images/android-icon-background.png",
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
+
+      "permissions": [
+  "android.permission.CAMERA"
+],
+
       "edgeToEdgeEnabled": false,
       "predictiveBackGestureEnabled": false,
       "package": "com.malay07.maingateentryexitapp"
@@ -26,22 +31,37 @@
       "output": "static",
       "favicon": "./assets/images/favicon.png"
     },
-    "plugins": [
-      "expo-router",
-      [
-        "expo-splash-screen",
-        {
-          "image": "./assets/images/splash-icon.png",
-          "imageWidth": 200,
-          "resizeMode": "contain",
-          "backgroundColor": "#ffffff",
-          "dark": {
-            "backgroundColor": "#000000"
-          }
-        }
-      ],
-      "expo-web-browser"
-    ],
+"plugins": [
+  "expo-router",
+
+  "expo-dev-client",
+
+  
+
+  [
+    "expo-splash-screen",
+    {
+      "image": "./assets/images/splash-icon.png",
+      "imageWidth": 200,
+      "resizeMode": "contain",
+      "backgroundColor": "#ffffff",
+      "dark": {
+        "backgroundColor": "#000000"
+      }
+    }
+  ],
+
+  "expo-web-browser",
+
+  [
+    "expo-location",
+    {
+      "locationAlwaysAndWhenInUsePermission": "Allow HostelVisionGate to use your location to detect when you enter or leave the hostel area."
+    }
+  ],
+
+  "expo-font"
+],
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true

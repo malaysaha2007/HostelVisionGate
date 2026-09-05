@@ -1,5 +1,12 @@
 import axios from "axios";
 import { CameraView, Camera } from "expo-camera";
+
+import {
+  useFaceDetection,
+} from "@infinitered/react-native-mlkit-face-detection";
+
+import * as Location from "expo-location";
+
 import { useEffect, useRef, useState } from "react";
 import {
   Text,
@@ -24,14 +31,46 @@ import * as Linking from "expo-linking";
 
 import API_BASE from "../../config";
 
+import { startHostelGeofence } from "../../services/geofencing";
+import {
+  HOSTEL_GEOFENCE,
+  CAMPUS_GEOFENCE,
+} from "../../config/geofence";
+
+
 
 export default function HomeScreen() {
+  const faceDetector = useFaceDetection();
   const [hasPermission, setHasPermission] = useState<boolean | null>(null);
+
+  const [location, setLocation] = useState<Location.LocationObject | null>(null);
+const [locationLoading, setLocationLoading] = useState(false);
+
+
+const [distanceFromTestPoint, setDistanceFromTestPoint] =
+  useState<number | null>(null);
+
+const [hostelStatus, setHostelStatus] =
+  useState<"INSIDE" | "OUTSIDE" | "UNKNOWN">("UNKNOWN");
+
+const [campusStatus, setCampusStatus] =
+  useState<"INSIDE" | "OUTSIDE" | "UNKNOWN">("UNKNOWN");
+
+
+
+
   const cameraRef = useRef<any>(null);
 
   const [cameraActive, setCameraActive] = useState(false);
+
+  const [nightAttendanceMode, setNightAttendanceMode] = useState(false);
+
+
   const [showModal, setShowModal] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [showAttendanceModal, setShowAttendanceModal] = useState(false);
+  const [showAttendanceSuccessModal, setShowAttendanceSuccessModal] = useState(false);
+const [attendanceData, setAttendanceData] = useState<any>(null);
 
   const [studentData, setStudentData] = useState<any>(null);
   const [purpose, setPurpose] = useState("");
@@ -41,6 +80,42 @@ export default function HomeScreen() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isScanning, setIsScanning] = useState(false);
   const [serverStatus, setServerStatus] = useState("checking");
+
+
+// ======================================================
+// LIVENESS CHECK
+// ======================================================
+
+type LivenessAction =
+  | "EYE_CLOSE"
+  | "EYE_OPEN"
+  | "LEFT"
+  | "RIGHT"
+  | "SMILE";
+
+const [livenessChecking, setLivenessChecking] =
+  useState(false);
+
+const [livenessMessage, setLivenessMessage] =
+  useState("Tap to start liveness verification");
+
+const [livenessSequence, setLivenessSequence] =
+  useState<LivenessAction[]>([]);
+
+const [currentLivenessIndex, setCurrentLivenessIndex] =
+  useState(0);
+
+const [livenessVerifiedCount, setLivenessVerifiedCount] =
+  useState(0);
+
+const livenessRunningRef = useRef(false);
+
+const eyesClosedRef = useRef(false);
+
+const livenessTimeoutRef =
+  useRef<ReturnType<typeof setTimeout> | null>(null);
+
+
 
   const [showWaitingModal, setShowWaitingModal] = useState(false);
 const [waitingMessage, setWaitingMessage] = useState("");
@@ -61,6 +136,7 @@ const [gateVerified, setGateVerified] = useState(false);
       setHasPermission(status === "granted");
     })();
   }, []);
+
 
 
   useEffect(() => {
@@ -108,6 +184,40 @@ useEffect(() => {
 
 },[cameraActive]);
 
+
+const calculateDistance = (
+  lat1: number,
+  lon1: number,
+  lat2: number,
+  lon2: number
+) => {
+  const R = 6371000; // Earth radius in meters
+
+  const dLat =
+    ((lat2 - lat1) * Math.PI) / 180;
+
+  const dLon =
+    ((lon2 - lon1) * Math.PI) / 180;
+
+  const a =
+    Math.sin(dLat / 2) *
+      Math.sin(dLat / 2) +
+    Math.cos((lat1 * Math.PI) / 180) *
+      Math.cos((lat2 * Math.PI) / 180) *
+      Math.sin(dLon / 2) *
+      Math.sin(dLon / 2);
+
+  const c =
+    2 * Math.atan2(
+      Math.sqrt(a),
+      Math.sqrt(1 - a)
+    );
+
+  return R * c;
+};
+
+
+
   // SERVER CHECK FUNCTION
   const checkServer = async () => {
     if (serverStatus === "checking") return;
@@ -120,6 +230,162 @@ useEffect(() => {
       setServerStatus("offline");
     }
   };
+
+
+const shuffleLivenessActions = (): LivenessAction[] => {
+
+  // Randomly choose ONLY ONE head-turn direction
+  const headTurn: LivenessAction =
+    Math.random() < 0.5
+      ? "LEFT"
+      : "RIGHT";
+
+  // Exactly 4 tasks
+  const actions: LivenessAction[] = [
+    "EYE_CLOSE",
+    "EYE_OPEN",
+    "SMILE",
+    headTurn,
+  ];
+
+  // Shuffle the 4 tasks
+  return [...actions].sort(
+    () => Math.random() - 0.5
+  );
+};
+
+
+const getLivenessInstruction = (
+  action: LivenessAction
+) => {
+
+  switch (action) {
+
+    case "EYE_CLOSE":
+      return "Close your eyes";
+
+    case "EYE_OPEN":
+      return "Open your eyes";
+
+    case "LEFT":
+      return "Turn your head LEFT";
+
+    case "RIGHT":
+      return "Turn your head RIGHT";
+
+    case "SMILE":
+      return "Smile";
+
+    default:
+      return "Look at the camera";
+  }
+};
+
+
+
+const getCurrentLocation = async () => {
+  try {
+    setLocationLoading(true);
+
+    const { status } =
+      await Location.requestForegroundPermissionsAsync();
+
+    if (status !== "granted") {
+      Alert.alert(
+        "Location Permission",
+        "Please allow location permission."
+      );
+      return;
+    }
+
+    const currentLocation =
+      await Location.getCurrentPositionAsync({
+        accuracy: Location.Accuracy.High,
+      });
+
+    setLocation(currentLocation);
+const currentLat =
+  currentLocation.coords.latitude;
+
+const currentLon =
+  currentLocation.coords.longitude;
+
+const accuracy =
+  currentLocation.coords.accuracy;
+
+console.log("CURRENT LAT:", currentLat);
+console.log("CURRENT LON:", currentLon);
+console.log("GPS ACCURACY:", accuracy, "meters");
+
+const hostelDistance = calculateDistance(
+  HOSTEL_GEOFENCE.latitude,
+  HOSTEL_GEOFENCE.longitude,
+  currentLat,
+  currentLon
+);
+
+const campusDistance = calculateDistance(
+  CAMPUS_GEOFENCE.latitude,
+  CAMPUS_GEOFENCE.longitude,
+  currentLat,
+  currentLon
+);
+
+
+setHostelStatus(
+  hostelDistance <= HOSTEL_GEOFENCE.radius
+    ? "INSIDE"
+    : "OUTSIDE"
+);
+
+setCampusStatus(
+  campusDistance <= CAMPUS_GEOFENCE.radius
+    ? "INSIDE"
+    : "OUTSIDE"
+);
+
+console.log(
+  "HOSTEL DISTANCE:",
+  hostelDistance.toFixed(2),
+  "meters"
+);
+
+console.log(
+  "HOSTEL STATUS:",
+  hostelDistance <= HOSTEL_GEOFENCE.radius
+    ? "INSIDE"
+    : "OUTSIDE"
+);
+
+console.log(
+  "CAMPUS DISTANCE:",
+  campusDistance.toFixed(2),
+  "meters"
+);
+
+console.log(
+  "CAMPUS STATUS:",
+  campusDistance <= CAMPUS_GEOFENCE.radius
+    ? "INSIDE"
+    : "OUTSIDE"
+);
+
+  } catch (error) {
+
+    console.log(
+      "Location Error:",
+      error
+    );
+
+    Alert.alert(
+      "Location Error",
+      "Could not get your location."
+    );
+
+  } finally {
+    setLocationLoading(false);
+  }
+};
 
   // AUTO CHECK
   useEffect(() => {
@@ -137,62 +403,707 @@ useEffect(() => {
     return () => clearInterval(interval);
   }, []);
 
-  // CAMERA AUTO STOP
-  useEffect(() => {
-    let timer: any;
-    if (cameraActive) {
-      timer = setTimeout(() => {
-        setCameraActive(false);
-        setIsScanning(false);
-      }, 20000);
+
+
+
+
+  
+
+const takePhoto = async () => {
+
+  // ==================================================
+  // BASIC CAMERA CHECK
+  // ==================================================
+
+  if (
+    !cameraRef.current ||
+    isScanning ||
+    livenessChecking ||
+    livenessRunningRef.current
+  ) {
+    return;
+  }
+
+  // ==================================================
+  // START LIVENESS
+  // ==================================================
+
+  livenessRunningRef.current = true;
+
+  setIsScanning(true);
+  setLivenessChecking(true);
+
+  const sequence = shuffleLivenessActions();
+
+  setLivenessSequence(sequence);
+  setCurrentLivenessIndex(0);
+  setLivenessVerifiedCount(0);
+
+  console.log("=================================");
+  console.log("LIVENESS VERIFICATION STARTED");
+  console.log("SEQUENCE:", sequence);
+  console.log("=================================");
+
+  try {
+
+    // ==================================================
+    // CHECK EACH LIVENESS ACTION
+    // ==================================================
+
+    for (let step = 0; step < sequence.length; step++) {
+
+      const action = sequence[step];
+
+      setCurrentLivenessIndex(step);
+
+      setLivenessMessage(
+        getLivenessInstruction(action)
+      );
+
+      console.log(
+        "CURRENT LIVENESS ACTION:",
+        action
+      );
+
+      let actionVerified = false;
+
+      // ------------------------------------------------
+      // Each action gets maximum 6 seconds
+      // ------------------------------------------------
+
+      const actionStartTime = Date.now();
+
+      // ------------------------------------------------
+      // Reset blink state for this action
+      // ------------------------------------------------
+
+      eyesClosedRef.current = false;
+
+      // ------------------------------------------------
+      // Keep checking camera frames
+      // ------------------------------------------------
+
+      while (
+        !actionVerified &&
+        Date.now() - actionStartTime < 6000
+      ) {
+
+        if (!cameraRef.current) {
+          throw new Error("Camera unavailable");
+        }
+
+        // ==============================================
+        // CAPTURE TEMPORARY FRAME
+        // ==============================================
+
+        const frame =
+          await cameraRef.current.takePictureAsync({
+            quality: 0.35,
+            skipProcessing: true,
+          });
+
+        if (!frame?.uri) {
+
+          console.log(
+            "LIVENESS: FRAME FAILED"
+          );
+
+          continue;
+        }
+
+        // ==============================================
+        // ML KIT FACE DETECTION
+        // ==============================================
+
+        const detectionResult =
+          await faceDetector.detectFaces(
+            frame.uri
+          );
+
+        if (!detectionResult) {
+
+          setLivenessMessage(
+            "Face detection failed"
+          );
+
+          continue;
+        }
+
+        const detectedFaces =
+          detectionResult.faces;
+
+        console.log(
+          "LIVENESS FACES:",
+          detectedFaces.length
+        );
+
+        // ==============================================
+        // NO FACE
+        // ==============================================
+
+        if (detectedFaces.length === 0) {
+
+          setLivenessMessage(
+            getLivenessInstruction(action)
+          );
+
+          continue;
+        }
+
+        // ==============================================
+        // MULTIPLE FACES
+        // ==============================================
+
+        if (detectedFaces.length > 1) {
+
+          setLivenessMessage(
+            "Only one face should be visible"
+          );
+
+          Alert.alert(
+            "Multiple Faces",
+            "Only one person should be visible during verification."
+          );
+
+          return;
+        }
+
+        // ==============================================
+        // SINGLE FACE
+        // ==============================================
+
+        const face = detectedFaces[0];
+
+        // =================================================
+        // FACE PROPERTIES
+        // =================================================
+
+        const leftEye =
+          face.leftEyeOpenProbability;
+
+        const rightEye =
+          face.rightEyeOpenProbability;
+
+        const smilingProbability =
+          face.smilingProbability;
+
+        const headEulerAngleY =
+          face.headEulerAngleY;
+
+        console.log(
+          "EYE:",
+          leftEye,
+          rightEye
+        );
+
+        console.log(
+          "SMILE:",
+          smilingProbability
+        );
+
+        console.log(
+          "HEAD Y:",
+          headEulerAngleY
+        );
+
+// =================================================
+// EYE CLOSE
+// =================================================
+
+if (action === "EYE_CLOSE") {
+
+  if (
+    leftEye != null &&
+    rightEye != null
+  ) {
+
+    const eyesClosed =
+      leftEye < 0.30 &&
+      rightEye < 0.30;
+
+    if (eyesClosed) {
+
+      actionVerified = true;
+
+      console.log(
+        "EYE CLOSE VERIFIED"
+      );
     }
-    return () => {
-      if (timer) clearTimeout(timer);
-    };
-  }, [cameraActive]);
+  }
+}
 
-  const takePhoto = async () => {
-    if (!cameraRef.current || isScanning) return;
-    setIsScanning(true);
+// =================================================
+// EYE OPEN
+// =================================================
 
-    try {
-      const photo = await cameraRef.current.takePictureAsync({
+else if (action === "EYE_OPEN") {
+
+  if (
+    leftEye != null &&
+    rightEye != null
+  ) {
+
+    const eyesOpen =
+      leftEye > 0.80 &&
+      rightEye > 0.80;
+
+    if (eyesOpen) {
+
+      actionVerified = true;
+
+      console.log(
+        "EYE OPEN VERIFIED"
+      );
+    }
+  }
+}
+
+        // =================================================
+        // TURN LEFT
+        // =================================================
+
+ else if (action === "LEFT") {
+
+  if (headEulerAngleY != null) {
+
+    console.log(
+      "LEFT HEAD ANGLE:",
+      headEulerAngleY
+    );
+
+    if (headEulerAngleY > 15) {
+
+      actionVerified = true;
+
+      console.log(
+        "LEFT TURN VERIFIED"
+      );
+    }
+  }
+}
+
+        // =================================================
+        // TURN RIGHT
+        // =================================================
+
+       else if (action === "RIGHT") {
+
+  if (headEulerAngleY != null) {
+
+    console.log(
+      "RIGHT HEAD ANGLE:",
+      headEulerAngleY
+    );
+
+    if (headEulerAngleY < -15) {
+
+      actionVerified = true;
+
+      console.log(
+        "RIGHT TURN VERIFIED"
+      );
+    }
+  }
+}
+
+        // =================================================
+        // SMILE
+        // =================================================
+
+        else if (action === "SMILE") {
+
+          if (
+            smilingProbability != null &&
+            smilingProbability > 0.65
+          ) {
+
+            actionVerified = true;
+
+            console.log(
+              "SMILE VERIFIED"
+            );
+          }
+        }
+
+        // =================================================
+        // SMALL DELAY
+        // Prevent camera/ML overload
+        // =================================================
+
+        await new Promise(
+          resolve => setTimeout(resolve, 150)
+        );
+      }
+
+      // ==================================================
+      // ACTION FAILED
+      // ==================================================
+
+      if (!actionVerified) {
+
+        console.log(
+          "LIVENESS ACTION FAILED:",
+          action
+        );
+
+        setLivenessMessage(
+          `Failed: ${getLivenessInstruction(action)}`
+        );
+
+        Alert.alert(
+          "Liveness Verification Failed",
+          `Please perform the requested action correctly:\n\n${getLivenessInstruction(action)}`
+        );
+
+        return;
+      }
+
+      // ==================================================
+      // ACTION SUCCESS
+      // ==================================================
+
+      setLivenessVerifiedCount(
+        step + 1
+      );
+
+      console.log(
+        "LIVENESS ACTION VERIFIED:",
+        action
+      );
+
+      setLivenessMessage(
+        `${getLivenessInstruction(action)} ✓`
+      );
+
+      // Small pause before next action
+      await new Promise(
+        resolve => setTimeout(resolve, 500)
+      );
+    }
+
+    // ==================================================
+    // ALL ACTIONS VERIFIED
+    // ==================================================
+
+    console.log(
+      "================================="
+    );
+
+    console.log(
+      "ALL LIVENESS ACTIONS VERIFIED"
+    );
+
+    console.log(
+      "================================="
+    );
+
+    setLivenessMessage(
+      "Liveness verified ✓"
+    );
+
+    // Give UI time to display success
+    await new Promise(
+      resolve => setTimeout(resolve, 700)
+    );
+
+    // ==================================================
+    // FINAL PHOTO
+    // ==================================================
+
+    console.log(
+      "TAKING FINAL PHOTO"
+    );
+
+    if (!cameraRef.current) {
+      throw new Error(
+        "Camera unavailable"
+      );
+    }
+
+    const finalPhoto =
+      await cameraRef.current.takePictureAsync({
         quality: 0.7,
         base64: true,
       });
 
-      setPhotoUri(photo.uri);
+    if (!finalPhoto?.uri) {
 
-      const response = await axios.post(
-        `${API_BASE}/api/recognize-face`,
-        { image: photo.base64 },
-        { timeout: 15000 }
+      Alert.alert(
+        "Camera Error",
+        "Could not capture final photo."
       );
 
-      const data = response.data;
-
-      
-
-
-
-      if (data.status === "BLOCKED") {
-        Alert.alert("Blocked", data.message);
-        return;
-      }
-
-      if (data.status !== "SUCCESS") {
-        Alert.alert("Verification Failed", data.message);
-        return;
-      }
-
-      setStudentData(data);
-      setShowModal(true);
-    } catch {
-      Alert.alert("Error", "Backend not reachable");
-    } finally {
-      setIsScanning(false);
+      return;
     }
-  };
+
+    // ==================================================
+    // SAVE PHOTO URI
+    // ==================================================
+
+    setPhotoUri(
+      finalPhoto.uri
+    );
+
+    console.log(
+      "FINAL PHOTO CAPTURED"
+    );
+
+    // ==================================================
+    // FINAL ML KIT FACE CHECK
+    // ==================================================
+
+    const finalDetection =
+      await faceDetector.detectFaces(
+        finalPhoto.uri
+      );
+
+    console.log(
+      "FINAL FACE DETECTION:",
+      finalDetection
+    );
+
+    if (
+      !finalDetection ||
+      finalDetection.faces.length === 0
+    ) {
+
+      Alert.alert(
+        "Face Not Detected",
+        "Please position your face clearly inside the camera."
+      );
+
+      return;
+    }
+
+    if (
+      finalDetection.faces.length > 1
+    ) {
+
+      Alert.alert(
+        "Multiple Faces",
+        "Only one person should be visible during verification."
+      );
+
+      return;
+    }
+
+    console.log(
+      "FINAL FACE VERIFIED"
+    );
+
+    // ==================================================
+    // SEND FINAL IMAGE TO FLASK
+    // ==================================================
+
+    console.log(
+      "SENDING FINAL PHOTO TO FLASK"
+    );
+
+    const response = await axios.post(
+      `${API_BASE}/api/recognize-face`,
+      {
+        image: finalPhoto.base64,
+      },
+      {
+        timeout: 15000,
+      }
+    );
+
+    const data =
+      response.data;
+
+    console.log(
+      "FACE RECOGNITION RESPONSE:",
+      data
+    );
+
+    // ==================================================
+    // BLOCKED STUDENT
+    // ==================================================
+
+    if (
+      data.status === "BLOCKED"
+    ) {
+
+      Alert.alert(
+        "Blocked",
+        data.message
+      );
+
+      return;
+    }
+
+    // ==================================================
+    // FACE NOT RECOGNIZED
+    // ==================================================
+
+    if (
+      data.status !== "SUCCESS"
+    ) {
+
+      Alert.alert(
+        "Verification Failed",
+        data.message
+      );
+
+      return;
+    }
+
+    // ==================================================
+    // STUDENT IDENTIFIED
+    // ==================================================
+
+    setStudentData(data);
+
+    // ==================================================
+    // NIGHT ATTENDANCE
+    // ==================================================
+
+    if (nightAttendanceMode) {
+
+      setCameraActive(false);
+
+      setTimeout(() => {
+
+        setShowAttendanceModal(true);
+
+      }, 300);
+
+      return;
+    }
+
+    // ==================================================
+    // NORMAL ENTRY / EXIT
+    // ==================================================
+
+    setCameraActive(false);
+
+    setShowModal(true);
+
+  } catch (error: any) {
+
+    console.log(
+      "LIVENESS / FACE RECOGNITION ERROR:",
+      error
+    );
+
+    console.log(
+      "ERROR RESPONSE:",
+      error?.response?.data
+    );
+
+    Alert.alert(
+      "Error",
+      "Face verification failed."
+    );
+
+  } finally {
+
+    setIsScanning(false);
+
+    setLivenessChecking(false);
+
+    livenessRunningRef.current = false;
+
+    eyesClosedRef.current = false;
+  }
+};
+
+
+
+
+const markNightAttendance = async () => {
+  if (!studentData || isSubmitting) return;
+
+  setIsSubmitting(true);
+
+  try {
+    const response = await axios.post(
+      `${API_BASE}/api/mark-night-attendance`,
+      {
+        student: studentData.student,
+      },
+      { timeout: 15000 }
+    );
+
+    const data = response.data;
+
+    if (data.status === "SUCCESS") {
+
+      Alert.alert(
+        "Attendance Successful",
+        data.message,
+        [
+          {
+            text: "OK",
+            onPress: () => {
+              setShowAttendanceModal(false);
+              setStudentData(null);
+              setPhotoUri(null);
+              setNightAttendanceMode(false);
+              setCameraActive(false);
+            },
+          },
+        ]
+      );
+
+      return;
+    }
+
+
+    if (data.status === "TIME_RESTRICTED") {
+  Alert.alert(
+    "Night Attendance Closed",
+    data.message
+  );
+
+  return;
+}
+
+    if (data.status === "ALREADY_MARKED") {
+
+      Alert.alert(
+        "Already Marked",
+        data.message,
+        [
+          {
+            text: "OK",
+            onPress: () => {
+              setShowAttendanceModal(false);
+              setStudentData(null);
+              setPhotoUri(null);
+              setNightAttendanceMode(false);
+              setCameraActive(false);
+            },
+          },
+        ]
+      );
+
+      return;
+    }
+
+    Alert.alert(
+      "Attendance Failed",
+      data.message || "Could not mark night attendance."
+    );
+
+  } catch (error: any) {
+
+    console.log(
+      "NIGHT ATTENDANCE ERROR:",
+      error.response?.data || error.message
+    );
+
+    Alert.alert(
+      "Error",
+      error.response?.data?.message ||
+      "Failed to mark night attendance."
+    );
+
+  } finally {
+    setIsSubmitting(false);
+  }
+};
 
 const playAlarm = async () => {
   try {
@@ -368,6 +1279,7 @@ const saveApprovedVacationExit = async () => {
     setPurpose("");
 setGateApproved(false);
 setShowModal(false);
+
 
 
   }catch (error: any) {
@@ -590,31 +1502,68 @@ return;
 
           <View style={styles.captureContainer}>
 
-  <Text style={styles.scanHint}>
-    {isScanning
-      ? "Scanning Face..."
-      : "Tap the button to scan"}
-  </Text>
+<Text style={styles.scanHint}>
+  {livenessChecking
+    ? livenessMessage
+    : nightAttendanceMode
+    ? "Tap to start liveness verification"
+    : "Tap to start liveness verification"
+    }
+    
+</Text>
 
-  <TouchableOpacity
-    disabled={isScanning}
-    onPress={takePhoto}
-    style={styles.captureOuter}
-  >
-    <View
-      style={[
-        styles.captureInner,
-        isScanning && styles.captureScanning,
-      ]}
-    />
+{livenessChecking && livenessSequence.length > 0 && (
+  <Text style={styles.livenessProgress}>
+    Step {currentLivenessIndex + 1} of {livenessSequence.length}
+  </Text>
+)}
+
+<TouchableOpacity
+  disabled={isScanning || livenessChecking}
+  onPress={takePhoto}
+  style={styles.captureOuter}
+>
+<View
+  style={[
+    styles.captureInner,
+    (isScanning || livenessChecking) &&
+      styles.captureScanning,
+  ]}
+/>
   </TouchableOpacity>
 
 </View>
 
-          <TouchableOpacity
-            style={styles.stopBtn}
-            onPress={() => setCameraActive(false)}
-          >
+         <TouchableOpacity
+  style={styles.stopBtn}
+  onPress={() => {
+
+    setCameraActive(false);
+
+setIsScanning(false);
+
+setLivenessChecking(false);
+
+setLivenessSequence([]);
+
+setCurrentLivenessIndex(0);
+
+setLivenessVerifiedCount(0);
+
+setLivenessMessage(
+  "Tap to start liveness verification"
+);
+
+livenessRunningRef.current = false;
+eyesClosedRef.current = false;
+
+if (livenessTimeoutRef.current) {
+  clearTimeout(livenessTimeoutRef.current);
+  livenessTimeoutRef.current = null;
+}
+
+  }}
+>
             <Text style={styles.btnText}>Stop Camera</Text>
           </TouchableOpacity>
         </>
@@ -692,25 +1641,120 @@ return;
     AI Powered Smart Entry & Exit
   </Text>
 
+
+
+  <View
+  style={{
+    width: "92%",
+    backgroundColor: "#fff",
+    padding: 15,
+    borderRadius: 15,
+    marginTop: 20,
+    elevation: 5,
+  }}
+>
+  <Text
+    style={{
+      fontSize: 17,
+      fontWeight: "bold",
+      color: "#0A3D62",
+      textAlign: "center",
+    }}
+  >
+    📍 Location Status
+  </Text>
+
+  <TouchableOpacity
+    style={{
+      backgroundColor: "#0A3D62",
+      padding: 12,
+      borderRadius: 10,
+      marginTop: 12,
+      alignItems: "center",
+    }}
+    onPress={getCurrentLocation}
+    disabled={locationLoading}
+  >
+    <Text
+      style={{
+        color: "#fff",
+        fontWeight: "bold",
+      }}
+    >
+      {locationLoading
+        ? "Getting Location..."
+        : "Get My Current Location"}
+    </Text>
+  </TouchableOpacity>
+
+  {location && (
+    
+
+      
+
+<View
+  style={{
+    marginTop: 15,
+    paddingTop: 10,
+  }}
+>
+  <Text
+    style={{
+      fontSize: 17,
+      fontWeight: "bold",
+      marginBottom: 12,
+    }}
+  >
+    Hostel Status:
+    {" "}
+    <Text
+      style={{
+       color:
+  hostelStatus === "INSIDE"
+    ? "#16a34a"
+    : hostelStatus === "OUTSIDE"
+    ? "#dc2626"
+    : "#f59e0b",
+      }}
+    >
+      {hostelStatus}
+    </Text>
+  </Text>
+
+  <Text
+    style={{
+      fontSize: 17,
+      fontWeight: "bold",
+    }}
+  >
+    Campus Status:
+    {" "}
+    <Text
+      style={{
+   color:
+  campusStatus === "INSIDE"
+    ? "#16a34a"
+    : campusStatus === "OUTSIDE"
+    ? "#dc2626"
+    : "#f59e0b",
+      }}
+    >
+      {campusStatus}
+    </Text>
+  </Text>
+</View>
+
+     
+    
+  )}
+</View>
+
+
+
+
  
 
   <View style={styles.featureContainer}>
-
-    
-
-    <View style={styles.featureCard}>
-      <Text style={styles.featureIcon}>🧠</Text>
-      <Text style={styles.featureText}>
-        AI Face Recognition
-      </Text>
-    </View>
-
-    <View style={styles.featureCard}>
-      <Text style={styles.featureIcon}>🔒</Text>
-      <Text style={styles.featureText}>
-        Secure Verification
-      </Text>
-    </View>
 
 <TouchableOpacity
   style={styles.featureCard}
@@ -729,26 +1773,108 @@ return;
 
   </View>
 
-  <TouchableOpacity
-    style={[
-      styles.startBtn,
-      serverStatus !== "online" && { opacity: 0.5 },
-    ]}
-    disabled={serverStatus !== "online"}
-    onPress={() => {
-      if (serverStatus === "online")
-        setCameraActive(true);
-      else
-        Alert.alert(
-          "Server Offline",
-          "Tap ↻ to retry connection"
-        );
-    }}
-  >
-    <Text style={styles.btnText}>
-      📷 Scan Face
-    </Text>
-  </TouchableOpacity>
+ {/* NIGHT ATTENDANCE */}
+
+<TouchableOpacity
+  style={[
+    styles.attendanceBtn,
+    (
+      serverStatus !== "online" ||
+      hostelStatus !== "INSIDE"
+    ) && { opacity: 0.5 },
+  ]}
+  disabled={
+    serverStatus !== "online" ||
+    hostelStatus !== "INSIDE"
+  }
+onPress={() => {
+
+  if (hostelStatus !== "INSIDE") {
+    Alert.alert(
+      "Outside Hostel",
+      "You must be inside the hostel to mark night attendance."
+    );
+    return;
+  }
+
+  const now = new Date();
+
+  const current = now.getHours() * 60 + now.getMinutes();
+
+  const START = 22 * 60;
+  const END = 23 * 60 + 59;
+
+  if (current < START || current > END) {
+    Alert.alert(
+      "Night Attendance Closed",
+      "Night attendance can be marked only between 22:00 and 23:59."
+    );
+    return;
+  }
+
+setNightAttendanceMode(true);
+
+setLivenessChecking(false);
+
+setLivenessSequence([]);
+
+setCurrentLivenessIndex(0);
+
+setLivenessVerifiedCount(0);
+
+setLivenessMessage(
+  "Tap to start liveness verification"
+);
+
+livenessRunningRef.current = false;
+eyesClosedRef.current = false;
+
+setCameraActive(true);
+}}
+>
+  <Text style={styles.btnText}>
+    🌙 Night Attendance
+  </Text>
+</TouchableOpacity>
+
+
+{/* ENTRY / EXIT */}
+
+<TouchableOpacity
+  style={[
+    styles.startBtn,
+    serverStatus !== "online" && { opacity: 0.5 },
+  ]}
+  disabled={serverStatus !== "online"}
+onPress={() => {
+
+  if (serverStatus === "online") {
+
+    setNightAttendanceMode(false);
+
+    setLivenessChecking(false);
+
+    setLivenessMessage(
+      "Tap to start liveness verification"
+    );
+
+    setCameraActive(true);
+
+  } else {
+
+    Alert.alert(
+      "Server Offline",
+      "Tap ↻ to retry connection"
+    );
+
+  }
+
+}}
+>
+  <Text style={styles.btnText}>
+    🚪 Entry / Exit
+  </Text>
+</TouchableOpacity>
 
   <Text style={styles.footer}>
 Version 1.0 • IIITDM Jabalpur
@@ -794,34 +1920,70 @@ Version 1.0 • IIITDM Jabalpur
               </>
             )}
 
-            {studentData?.action === "EXIT" && (
-              <Picker
-                selectedValue={purpose}
-                onValueChange={(value) => setPurpose(value)}
-              >
-                <Picker.Item label="Select Purpose" value="" />
-                <Picker.Item label="Tea Break" value="Tea Break" />
-                <Picker.Item label="Market" value="Market" />
-                <Picker.Item label="Hospital" value="Hospital" />
-                <Picker.Item label="Official Work" value="Official Work" />
-                <Picker.Item label="Vacation" value="Vacation" />
-              </Picker>
-            )}
+           {studentData?.action === "EXIT" && (
+  <View style={styles.purposeContainer}>
+
+    <Text style={styles.purposeLabel}>
+      Select Purpose
+    </Text>
+
+    <Picker
+      selectedValue={purpose}
+      onValueChange={(value) => setPurpose(value)}
+      style={styles.purposePicker}
+      dropdownIconColor="#0A3D62"
+    >
+      <Picker.Item label="Select Purpose" value="" />
+      <Picker.Item label="Tea Break" value="Tea Break" />
+      <Picker.Item label="Market" value="Market" />
+      <Picker.Item label="Hospital" value="Hospital" />
+      <Picker.Item label="Official Work" value="Official Work" />
+      <Picker.Item label="Vacation" value="Vacation" />
+    </Picker>
+
+  </View>
+)}
 
             <View style={styles.btnRow}>
               <TouchableOpacity
-                style={styles.confirmBtn}
-                onPress={confirmEntryExit}
-              >
-                <Text style={styles.btnText}>Confirm</Text>
-              </TouchableOpacity>
+  style={styles.confirmBtn}
+  disabled={isSubmitting}
+  onPress={confirmEntryExit}
+>
+  <Text style={styles.btnText}>
+    {isSubmitting ? "Processing..." : "Confirm"}
+  </Text>
+</TouchableOpacity>
 
-              <TouchableOpacity
+        <TouchableOpacity
   style={styles.cancelBtn}
-  onPress={async () => {
-    await stopAlarm();
-    setShowModal(false);
-  }}
+onPress={() => {
+
+  setShowModal(false);
+
+  setStudentData(null);
+
+  setPhotoUri(null);
+
+  setPurpose("");
+
+  setNightAttendanceMode(false);
+
+setLivenessChecking(false);
+
+setLivenessSequence([]);
+
+setCurrentLivenessIndex(0);
+
+setLivenessVerifiedCount(0);
+
+setLivenessMessage(
+  "Tap to start liveness verification"
+);
+
+livenessRunningRef.current = false;
+eyesClosedRef.current = false;
+}}
 >
                 <Text style={styles.btnText}>Cancel</Text>
               </TouchableOpacity>
@@ -829,6 +1991,217 @@ Version 1.0 • IIITDM Jabalpur
           </View>
         </View>
       </Modal>
+
+
+            {/* NIGHT ATTENDANCE MODAL */}
+
+      <Modal
+        visible={showAttendanceModal}
+        transparent
+        animationType="fade"
+      >
+        <View style={styles.overlay}>
+          <View style={styles.modalBox}>
+
+            <Text style={styles.title}>
+              Night Attendance
+            </Text>
+
+            {photoUri && (
+              <Image
+                source={{ uri: photoUri }}
+                style={styles.photo}
+              />
+            )}
+
+            <Text>
+              <Text style={styles.label}>Name : </Text>
+              {studentData?.student?.name}
+            </Text>
+
+            <Text>
+              <Text style={styles.label}>Roll : </Text>
+              {studentData?.student?.roll_no}
+            </Text>
+
+            <Text>
+              <Text style={styles.label}>Room No. : </Text>
+              {studentData?.student?.room}
+            </Text>
+
+
+            <Text
+              style={{
+                marginTop: 15,
+                textAlign: "center",
+                fontWeight: "bold",
+              }}
+            >
+              Are you sure you want to mark
+              {"\n"}
+              Night Attendance?
+            </Text>
+
+            <View style={styles.btnRow}>
+
+              <TouchableOpacity
+                style={styles.confirmBtn}
+                onPress={markNightAttendance}
+              >
+                <Text style={styles.btnText}>
+                  Confirm
+                </Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={styles.cancelBtn}
+             onPress={() => {
+
+  setShowAttendanceModal(false);
+
+  setStudentData(null);
+
+  setPhotoUri(null);
+
+  setNightAttendanceMode(false);
+
+  setLivenessChecking(false);
+
+  setLivenessMessage(
+    "Look at the camera"
+  );
+}}
+              >
+                <Text style={styles.btnText}>
+                  Cancel
+                </Text>
+              </TouchableOpacity>
+
+            </View>
+
+          </View>
+        </View>
+      </Modal>
+
+
+
+      {/* =====================================================
+    NIGHT ATTENDANCE SUCCESS MODAL
+===================================================== */}
+
+<Modal
+  visible={showAttendanceSuccessModal}
+  transparent
+  animationType="fade"
+>
+  <View style={styles.overlay}>
+
+    <View style={styles.attendanceSuccessCard}>
+
+      {/* STUDENT PHOTO */}
+
+      <Image
+        source={{
+          uri:
+            attendanceData?.photo ||
+            studentData?.student?.photo
+        }}
+        style={styles.attendanceStudentPhoto}
+      />
+
+      {/* SUCCESS TITLE */}
+
+      <Text style={styles.attendanceSuccessHeading}>
+        ATTENDANCE MARKED
+      </Text>
+
+      <View style={styles.divider} />
+
+      {/* WELCOME */}
+
+      <Text style={styles.attendanceWelcome}>
+        GOOD NIGHT,
+      </Text>
+
+      <Text style={styles.attendanceStudentName}>
+        {attendanceData?.name}
+      </Text>
+
+      <Text style={styles.attendanceRollNumber}>
+        {attendanceData?.roll_no}
+      </Text>
+
+      <View style={styles.divider} />
+
+      {/* ATTENDANCE INFORMATION */}
+
+      <View style={styles.attendanceInfoRow}>
+
+        <Text style={styles.attendanceInfoLabel}>
+          Status
+        </Text>
+
+        <Text style={styles.attendanceStatus}>
+          PRESENT
+        </Text>
+
+      </View>
+
+      <View style={styles.attendanceInfoRow}>
+
+        <Text style={styles.attendanceInfoLabel}>
+          Date
+        </Text>
+
+        <Text style={styles.attendanceInfoValue}>
+          {attendanceData?.date || "-"}
+        </Text>
+
+      </View>
+
+      <View style={styles.attendanceInfoRow}>
+
+        <Text style={styles.attendanceInfoLabel}>
+          Attendance Time
+        </Text>
+
+        <Text style={styles.attendanceInfoValue}>
+          {attendanceData?.time || "-"}
+        </Text>
+
+      </View>
+
+      <View style={styles.divider} />
+
+      {/* DONE BUTTON */}
+
+      <TouchableOpacity
+        style={styles.attendanceDoneButton}
+        onPress={() => {
+
+          setShowAttendanceSuccessModal(false);
+
+          setStudentData(null);
+          setPhotoUri(null);
+          setAttendanceData(null);
+          setNightAttendanceMode(false);
+
+        }}
+      >
+
+        <Text style={styles.attendanceDoneText}>
+          DONE
+        </Text>
+
+      </TouchableOpacity>
+
+    </View>
+
+  </View>
+</Modal>
+
+
+
 
       {/* SUCCESS MODAL */}
       <Modal visible={showSuccessModal} transparent animationType="fade">
@@ -1059,11 +2432,13 @@ Version 1.0 • IIITDM Jabalpur
 
 </View>
 
-
-
-
   );
 }
+
+
+
+
+
 
 const styles = StyleSheet.create({
   scanBtn: { backgroundColor: "#0a3d62", padding: 15, alignItems: "center" },
@@ -1552,6 +2927,13 @@ scanHint: {
   marginBottom: 8,
 },
 
+livenessProgress: {
+  color: "#94A3B8",
+  fontSize: 13,
+  marginBottom: 8,
+  fontWeight: "600",
+},
+
 captureOuter: {
   width: 62,
   height: 62,
@@ -1586,4 +2968,188 @@ captureInner: {
 captureScanning: {
   backgroundColor: "#22C55E",
 },
+
+
+attendanceBtn: {
+  backgroundColor: "#16a34a",
+  padding: 15,
+  borderRadius: 10,
+  width: "100%",
+  justifyContent: "center",
+  alignItems: "center",
+  elevation: 8,
+  height: 50,
+  marginBottom: 12,
+},
+
+
+/* =====================================================
+   NIGHT ATTENDANCE SUCCESS CARD
+===================================================== */
+
+attendanceSuccessCard: {
+  width: "90%",
+  backgroundColor: "#fff",
+  borderRadius: 25,
+  padding: 28,
+
+  shadowColor: "#000",
+
+  shadowOffset: {
+    width: 0,
+    height: 8,
+  },
+
+  shadowOpacity: 0.25,
+  shadowRadius: 12,
+
+  elevation: 15,
+},
+
+attendanceStudentPhoto: {
+  width: 90,
+  height: 90,
+
+  borderRadius: 45,
+
+  borderWidth: 3,
+  borderColor: "#16a34a",
+
+  marginBottom: 20,
+
+  backgroundColor: "#eee",
+},
+
+attendanceSuccessHeading: {
+  fontSize: 24,
+  fontWeight: "bold",
+
+  color: "#16a34a",
+
+  marginTop: 10,
+},
+
+attendanceWelcome: {
+  marginTop: 18,
+
+  fontSize: 18,
+
+  color: "#666",
+
+  fontWeight: "600",
+},
+
+attendanceStudentName: {
+  fontSize: 32,
+
+  fontWeight: "900",
+
+  color: "#0f172a",
+
+  letterSpacing: 1,
+},
+
+attendanceRollNumber: {
+  fontSize: 17,
+
+  color: "#777",
+
+  marginTop: 5,
+},
+
+attendanceInfoRow: {
+  flexDirection: "row",
+
+  alignItems: "center",
+
+  paddingVertical: 14,
+
+  paddingHorizontal: 18,
+
+  backgroundColor: "#f8fafc",
+
+  borderRadius: 12,
+
+  marginBottom: 12,
+},
+
+attendanceInfoLabel: {
+  width: 130,
+
+  fontSize: 17,
+
+  fontWeight: "700",
+
+  color: "#333",
+},
+
+attendanceInfoValue: {
+  flex: 1,
+
+  textAlign: "right",
+
+  fontSize: 16,
+
+  color: "#111",
+},
+
+attendanceStatus: {
+  flex: 1,
+
+  textAlign: "right",
+
+  fontSize: 16,
+
+  fontWeight: "bold",
+
+  color: "#16a34a",
+},
+
+attendanceDoneButton: {
+  width: "100%",
+
+  height: 56,
+
+  backgroundColor: "#0a3d62",
+
+  borderRadius: 14,
+
+  justifyContent: "center",
+
+  alignItems: "center",
+
+  marginTop: 15,
+
+  elevation: 8,
+},
+
+attendanceDoneText: {
+  color: "#fff",
+
+  fontSize: 18,
+
+  fontWeight: "bold",
+},
+
+purposeContainer: {
+  marginTop: 15,
+  marginBottom: 10,
+},
+
+purposeLabel: {
+  fontSize: 16,
+  fontWeight: "bold",
+  color: "#0A3D62",
+  marginBottom: 5,
+},
+
+purposePicker: {
+  height: 55,
+  width: "100%",
+  color: "#111",
+  backgroundColor: "#f1f5f9",
+  borderRadius: 10,
+},
+
+
 });

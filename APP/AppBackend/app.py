@@ -36,6 +36,8 @@ db = client["main_gate_entry_exit_system"]
 students_collection = db["student_auth_data"]
 entry_exit_collection = db["entry_exit_logs"]
 vacation_collection = db["vacation_application"]
+night_attendance_collection = db["night_attendance"]
+
 
 
 # ======================================================
@@ -402,6 +404,331 @@ def confirm_entry_exit():
         return jsonify({
             "status": "ERROR",
             "message": str(e)
+        }), 500
+        
+        
+        
+        
+        # ======================================================
+# LIVENESS CHECK - BLINK DETECTION
+# ======================================================
+
+def calculate_eye_aspect_ratio(eye):
+
+    # eye contains 6 facial landmark points
+
+    p1 = np.array(eye[0])
+    p2 = np.array(eye[1])
+    p3 = np.array(eye[2])
+    p4 = np.array(eye[3])
+    p5 = np.array(eye[4])
+    p6 = np.array(eye[5])
+
+    # Vertical distances
+    vertical_1 = np.linalg.norm(p2 - p6)
+    vertical_2 = np.linalg.norm(p3 - p5)
+
+    # Horizontal distance
+    horizontal = np.linalg.norm(p1 - p4)
+
+    if horizontal == 0:
+        return 0
+
+    ear = (
+        vertical_1 + vertical_2
+    ) / (2.0 * horizontal)
+
+    return ear
+
+
+@app.route("/api/liveness-check", methods=["POST"])
+def liveness_check():
+
+    try:
+
+        data = request.get_json()
+
+        if not data or "images" not in data:
+            return jsonify({
+                "status": "ERROR",
+                "message": "No images received"
+            }), 400
+
+        images = data["images"]
+
+        if not isinstance(images, list) or len(images) < 3:
+            return jsonify({
+                "status": "ERROR",
+                "message": "At least 3 images are required"
+            }), 400
+
+        ear_values = []
+
+        # --------------------------------------------------
+        # PROCESS EACH FRAME
+        # --------------------------------------------------
+
+        for image_base64 in images:
+
+            try:
+
+                image_data = base64.b64decode(
+                    image_base64
+                )
+
+                image_np = np.array(
+                    Image.open(
+                        io.BytesIO(image_data)
+                    ).convert("RGB")
+                )
+
+            except Exception:
+
+                continue
+
+            # Resize
+            small_img = cv2.resize(
+                image_np,
+                (0, 0),
+                fx=0.5,
+                fy=0.5
+            )
+
+            # Convert
+            rgb_small = cv2.cvtColor(
+                small_img,
+                cv2.COLOR_BGR2RGB
+            )
+
+            # Detect facial landmarks
+            landmarks = face_recognition.face_landmarks(
+                rgb_small
+            )
+
+            # We need exactly one face
+            if len(landmarks) != 1:
+                continue
+
+            face = landmarks[0]
+
+            if (
+                "left_eye" not in face
+                or "right_eye" not in face
+            ):
+                continue
+
+            left_eye = face["left_eye"]
+            right_eye = face["right_eye"]
+
+            left_ear = calculate_eye_aspect_ratio(
+                left_eye
+            )
+
+            right_ear = calculate_eye_aspect_ratio(
+                right_eye
+            )
+
+            average_ear = (
+                left_ear + right_ear
+            ) / 2.0
+
+            ear_values.append(
+                average_ear
+            )
+
+        # --------------------------------------------------
+        # CHECK WHETHER ENOUGH VALID FRAMES EXIST
+        # --------------------------------------------------
+
+        if len(ear_values) < 3:
+
+            return jsonify({
+                "status": "LIVENESS_FAILED",
+                "message":
+                    "Face could not be detected clearly. "
+                    "Please look at the camera and try again."
+            })
+
+        # --------------------------------------------------
+        # BLINK DETECTION
+        # --------------------------------------------------
+
+        OPEN_THRESHOLD = 0.22
+        CLOSED_THRESHOLD = 0.18
+
+        eyes_were_open = False
+        blink_detected = False
+
+        for ear in ear_values:
+
+            # Eyes open
+            if ear >= OPEN_THRESHOLD:
+                eyes_were_open = True
+
+            # Eyes closed after being open
+            elif (
+                eyes_were_open
+                and ear <= CLOSED_THRESHOLD
+            ):
+                blink_detected = True
+
+            # Eyes open again after closing
+            if (
+                blink_detected
+                and ear >= OPEN_THRESHOLD
+            ):
+                break
+
+        # --------------------------------------------------
+        # RESULT
+        # --------------------------------------------------
+
+        if blink_detected:
+
+            return jsonify({
+                "status": "LIVENESS_SUCCESS",
+                "message": "Liveness verified successfully",
+                "blink_detected": True
+            })
+
+        return jsonify({
+            "status": "LIVENESS_FAILED",
+            "message":
+                "Blink was not detected. "
+                "Please blink naturally and try again.",
+            "blink_detected": False
+        })
+
+    except Exception as e:
+
+        traceback.print_exc()
+
+        return jsonify({
+            "status": "ERROR",
+            "message": str(e)
+        }), 500
+        
+        
+        
+# ======================================================
+# NIGHT ATTENDANCE
+# ======================================================
+@app.route("/api/mark-night-attendance", methods=["POST"])
+def mark_night_attendance():
+
+    try:
+        data = request.get_json()
+
+        # --------------------------------------------------
+        # VALIDATE REQUEST
+        # --------------------------------------------------
+        if not data:
+            return jsonify({
+                "status": "ERROR",
+                "message": "Invalid request."
+            }), 400
+
+        student = data.get("student")
+
+        if not student:
+            return jsonify({
+                "status": "ERROR",
+                "message": "Student information is missing."
+            }), 400
+
+        roll_no = student.get("roll_no")
+        student_name = student.get("name", "Student")
+
+        if not roll_no:
+            return jsonify({
+                "status": "ERROR",
+                "message": "Roll number is missing."
+            }), 400
+
+        # --------------------------------------------------
+        # CURRENT IST TIME
+        # --------------------------------------------------
+        now = datetime.utcnow() + timedelta(hours=5, minutes=30)
+
+        # Database date format
+        current_date = now.strftime("%Y-%m-%d")
+
+        # Display date format
+        display_date = now.strftime("%d/%m/%Y")
+
+        # Current time
+        current_time = now.strftime("%H:%M:%S")
+        
+        
+        # NIGHT ATTENDANCE TIME
+        current = now.hour * 60 + now.minute
+
+        START = 22 * 60
+        END = 23 * 60 + 59
+
+        if not START <= current <= END:
+            return jsonify({
+        "status": "TIME_RESTRICTED",
+        "message": "Night attendance can be marked only between 22:00 and 23:59"
+    }), 403
+
+        # --------------------------------------------------
+        # CHECK DUPLICATE ATTENDANCE
+        # --------------------------------------------------
+        existing_attendance = night_attendance_collection.find_one({
+            "roll_no": roll_no,
+            "datetime": {
+        "$regex": f"^{current_date}"
+    }
+        })
+
+        if existing_attendance:
+
+            previous_time = existing_attendance.get("time", current_time)
+
+            return jsonify({
+                "status": "ALREADY_MARKED",
+                "message": (
+                    f"{student_name}, your attendance for "
+                    f"{display_date} has already been marked successfully "
+                    f"on {previous_time}. "
+                    f"Please do not try again for duplicate entries."
+                ),
+                "date": display_date,
+                "time": previous_time
+            }), 409
+
+        # --------------------------------------------------
+        # SAVE ATTENDANCE
+        # --------------------------------------------------
+        attendance = {
+            "roll_no": roll_no,
+            "datetime": now.strftime("%Y-%m-%d %H:%M:%S")
+        }
+
+        night_attendance_collection.insert_one(attendance)
+
+        # --------------------------------------------------
+        # SUCCESS RESPONSE
+        # --------------------------------------------------
+        return jsonify({
+            "status": "SUCCESS",
+            "message": (
+                f"{student_name}, your attendance for "
+                f"{display_date} has been marked successfully "
+                f"on {current_time}."
+            ),
+            "date": display_date,
+            "time": current_time
+        }), 200
+
+    except Exception as e:
+
+        traceback.print_exc()
+
+        return jsonify({
+            "status": "ERROR",
+            "message": "Something went wrong while marking attendance."
         }), 500
         
         
